@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# build ke time khud copy hoti hain (scripts/copy-lib.js)
+app/xlsx.bundle.js
+app/jszip.min.js

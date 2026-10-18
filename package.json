@@ -1,0 +1,50 @@
+{
+  "name": "balance-sheet",
+  "productName": "Balance Sheet",
+  "version": "1.0.0",
+  "description": "Horizontal Balance Sheet (offline desktop app)",
+  "author": "Balance Sheet",
+  "main": "main.js",
+  "scripts": {
+    "prepare-lib": "node scripts/copy-lib.js",
+    "start": "npm run prepare-lib && electron .",
+    "dist": "npm run prepare-lib && electron-builder --win nsis --x64 --publish never"
+  },
+  "dependencies": {
+    "xlsx-js-style": "1.2.0",
+    "jszip": "3.10.1"
+  },
+  "devDependencies": {
+    "electron": "33.2.0",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.balancesheet.app",
+    "productName": "Balance Sheet",
+    "files": [
+      "main.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Balance Sheet",
+      "artifactName": "BalanceSheet_Setup.${ext}",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "runAfterFinish": true,
+      "perMachine": false
+    }
+  }
+}
