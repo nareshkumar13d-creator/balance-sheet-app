@@ -1,7 +1,7 @@
 {
   "name": "balance-sheet",
   "productName": "Balance Sheet",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Horizontal Balance Sheet (offline desktop app)",
   "author": "Balance Sheet",
   "main": "main.js",
