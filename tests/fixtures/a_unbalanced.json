@@ -1,0 +1,329 @@
+{
+ "tb": [
+  {
+   "n": "Goods",
+   "os": 0,
+   "pur": 400000,
+   "sale": 900000,
+   "cs": 100000,
+   "osq": "",
+   "purq": "",
+   "saleq": "",
+   "csq": "",
+   "u": ""
+  }
+ ],
+ "mode": "B",
+ "firm": "Sample Traders",
+ "addr": "Main Market",
+ "d": "31.03.2026",
+ "ay": "2026-27",
+ "caps": [
+  {
+   "prop": "",
+   "ob": 500000,
+   "pct": 100,
+   "add": [
+    {
+     "n": "Cash Introduced",
+     "v": ""
+    },
+    {
+     "n": "Bank Introduced",
+     "v": ""
+    },
+    {
+     "n": "Interest",
+     "v": ""
+    }
+   ],
+   "dr": [
+    {
+     "n": "Drawings",
+     "v": ""
+    },
+    {
+     "n": "Income Tax Paid",
+     "v": ""
+    },
+    {
+     "n": "Insurance Premium",
+     "v": ""
+    }
+   ]
+  }
+ ],
+ "os": "",
+ "cs": "",
+ "L": {
+  "sales": [
+   {
+    "n": "Sale 1",
+    "v": ""
+   },
+   {
+    "n": "Sale 2",
+    "v": ""
+   }
+  ],
+  "pur": [
+   {
+    "n": "Purchase 1",
+    "v": ""
+   },
+   {
+    "n": "Purchase 2",
+    "v": ""
+   }
+  ],
+  "exp": [
+   {
+    "n": "Accounting Fees",
+    "v": 300000
+   },
+   {
+    "n": "Bank Exp.",
+    "v": ""
+   },
+   {
+    "n": "Bank Interest",
+    "v": ""
+   },
+   {
+    "n": "Travelling Exp.",
+    "v": ""
+   },
+   {
+    "n": "Insurance Premium",
+    "v": ""
+   },
+   {
+    "n": "Interest",
+    "v": ""
+   },
+   {
+    "n": "Interest On Vehicle Loan",
+    "v": ""
+   },
+   {
+    "n": "Labour & Wages",
+    "v": ""
+   },
+   {
+    "n": "Professional Fee",
+    "v": ""
+   },
+   {
+    "n": "Salary",
+    "v": ""
+   },
+   {
+    "n": "Diesel",
+    "v": ""
+   },
+   {
+    "n": "Processing Fees",
+    "v": ""
+   },
+   {
+    "n": "Misc. Shop Exp.",
+    "v": ""
+   },
+   {
+    "n": "Staff Welfare",
+    "v": ""
+   },
+   {
+    "n": "Repair & Maintenance",
+    "v": ""
+   },
+   {
+    "n": "Other Exp.",
+    "v": ""
+   }
+  ],
+  "oi": [
+   {
+    "n": "Interest Received",
+    "v": ""
+   },
+   {
+    "n": "Labour Received",
+    "v": ""
+   }
+  ],
+  "cadd": [
+   {
+    "n": "Cash Introduced",
+    "v": ""
+   },
+   {
+    "n": "Bank Introduced",
+    "v": ""
+   },
+   {
+    "n": "Interest",
+    "v": ""
+   }
+  ],
+  "cdr": [
+   {
+    "n": "Drawings",
+    "v": ""
+   },
+   {
+    "n": "Income Tax Paid",
+    "v": ""
+   },
+   {
+    "n": "Insurance Premium",
+    "v": ""
+   }
+  ],
+  "B": [
+   {
+    "n": "Bank OD Limit",
+    "v": ""
+   },
+   {
+    "n": "Term Loan",
+    "v": ""
+   }
+  ],
+  "C": [
+   {
+    "n": "Party 1",
+    "v": ""
+   },
+   {
+    "n": "Party 2",
+    "v": ""
+   },
+   {
+    "n": "Party 3",
+    "v": ""
+   }
+  ],
+  "D": [
+   {
+    "n": "Party 1",
+    "v": ""
+   },
+   {
+    "n": "Party 2",
+    "v": ""
+   },
+   {
+    "n": "Party 3",
+    "v": ""
+   }
+  ],
+  "E": [
+   {
+    "n": "TDS Payable",
+    "v": ""
+   },
+   {
+    "n": "Salary Payable",
+    "v": ""
+   },
+   {
+    "n": "GST",
+    "v": ""
+   }
+  ],
+  "F": [
+   {
+    "n": "Advance To Farmers",
+    "v": ""
+   },
+   {
+    "n": "Security Deposits",
+    "v": ""
+   },
+   {
+    "n": "Party 1",
+    "v": ""
+   }
+  ],
+  "G": [
+   {
+    "n": "Party 1",
+    "v": 150000
+   },
+   {
+    "n": "Party 2",
+    "v": ""
+   },
+   {
+    "n": "Party 3",
+    "v": ""
+   }
+  ],
+  "H": [
+   {
+    "n": "TDS",
+    "v": ""
+   },
+   {
+    "n": "GST",
+    "v": ""
+   }
+  ],
+  "cash": [
+   {
+    "n": "Bank A/c 1",
+    "v": 551000
+   },
+   {
+    "n": "Bank A/c 2",
+    "v": ""
+   },
+   {
+    "n": "Cheque In Hand",
+    "v": ""
+   },
+   {
+    "n": "Cash In Hand",
+    "v": ""
+   }
+  ],
+  "dep": [
+   {
+    "n": "Security Deposit 1",
+    "v": ""
+   },
+   {
+    "n": "Security Deposit 2",
+    "v": ""
+   }
+  ]
+ },
+ "fa": [
+  {
+   "n": "",
+   "r": "",
+   "o": "",
+   "a1": "",
+   "a2": "",
+   "d": ""
+  }
+ ],
+ "xs": [],
+ "xc": [],
+ "show": "Y",
+ "caFirm": "ABC & Associates",
+ "caType": "Chartered Accountants",
+ "caName": "ABC",
+ "caDesig": "Partner",
+ "caNo": "123456",
+ "caUdin": "26123456ABCDEFGH12",
+ "caFrn": "123456N",
+ "place": "ABC",
+ "dsign": "15.09.2026",
+ "sg": "sd/-",
+ "sg1": "Prop.",
+ "_app": "BalanceSheetAnnexure",
+ "_fmt": "a",
+ "_fn": ""
+}

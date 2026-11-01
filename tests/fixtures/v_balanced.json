@@ -1,0 +1,890 @@
+{
+ "M": {
+  "firm": "Sample Traders",
+  "addr": "Main Market",
+  "d1": "31.03.2026",
+  "d0": "31.03.2025",
+  "show": "Y",
+  "caFirm": "ABC & Associates",
+  "caType": "Chartered Accountants",
+  "caName": "ABC",
+  "caDesig": "Partner",
+  "caNo": "123456",
+  "caUdin": "26123456ABCDEFGH12",
+  "caFrn": "123456N",
+  "place": "ABC",
+  "dsign": "15.09.2026",
+  "sg": "sd/-",
+  "sg1": "Prop."
+ },
+ "ACC": 1,
+ "DP": [
+  {
+   "n": "Block (15%) Car",
+   "r": 15,
+   "o": "",
+   "a1": "",
+   "a2": "",
+   "d": ""
+  }
+ ],
+ "Q": [],
+ "acc": [
+  {
+   "name": "",
+   "pct": 100
+  }
+ ],
+ "S": [
+  {
+   "n": 1,
+   "t": "Capital Account",
+   "g": [
+    {
+     "id": "1a1",
+     "h": "Opening Balance",
+     "s": 1,
+     "ai": 0,
+     "r": [
+      {
+       "n": "Opening Balance",
+       "v": [
+        500000,
+        400000
+       ]
+      }
+     ]
+    },
+    {
+     "id": "1b1",
+     "h": "Add:",
+     "s": 1,
+     "ai": 0,
+     "r": [
+      {
+       "n": "Capital Introduced",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Interest from Saving A/c",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Interest from Income Tax Refund",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Profit/(Loss) for the year",
+       "k": "np",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    },
+    {
+     "id": "1c1",
+     "h": "Less:",
+     "s": -1,
+     "ai": 0,
+     "r": [
+      {
+       "n": "Withdrawals",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 2,
+   "t": "Secured Loan",
+   "g": [
+    {
+     "id": "2a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Bank OD Limit",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Term Loan",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 3,
+   "t": "Unsecured Loans",
+   "g": [
+    {
+     "id": "3a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Party 1",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Party 2",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Party 3",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 4,
+   "t": "Sundry Creditors",
+   "g": [
+    {
+     "id": "4a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Party 1",
+       "v": [
+        80000,
+        60000
+       ]
+      },
+      {
+       "n": "Party 2",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Party 3",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 5,
+   "t": "Provisions",
+   "g": [
+    {
+     "id": "5a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "TDS Payable",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Salary Payable",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "GST",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 7,
+   "t": "Loans & Advances (Assets)",
+   "g": [
+    {
+     "id": "7a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Advance To Farmers",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Security Deposits",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Party 1",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 8,
+   "t": "Sundry Debtors",
+   "g": [
+    {
+     "id": "8a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Party 1",
+       "v": [
+        150000,
+        100000
+       ]
+      },
+      {
+       "n": "Party 2",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Party 3",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 9,
+   "t": "Cash and Cash equivalents",
+   "g": [
+    {
+     "id": "9a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Bank A/c 1",
+       "v": [
+        1030000,
+        910000
+       ]
+      },
+      {
+       "n": "Bank A/c 2",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Cheque In Hand",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Cash In Hand",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 10,
+   "t": "Duties and Taxes",
+   "g": [
+    {
+     "id": "10a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "TDS",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "GST",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 11,
+   "t": "Revenue From Operation",
+   "g": [
+    {
+     "id": "11a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Sale 1",
+       "v": [
+        900000,
+        800000
+       ]
+      },
+      {
+       "n": "Sale 2",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 12,
+   "t": "Other Income",
+   "g": [
+    {
+     "id": "12a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Income 1",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Income 2",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 13,
+   "t": "Change In Inventory",
+   "g": [
+    {
+     "id": "13a",
+     "h": "Op. Stock (A)",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Stock 1",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Stock 2",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    },
+    {
+     "id": "13b",
+     "h": "Purchases (B)",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Purchase 1",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Purchase 2",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    },
+    {
+     "id": "13c",
+     "h": "Cl. Stock (C)",
+     "s": -1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Stock 1",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Stock 2",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 14,
+   "t": "Direct Exp.",
+   "g": [
+    {
+     "id": "14a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "GST Liability",
+       "v": [
+        300000,
+        250000
+       ]
+      },
+      {
+       "n": "Labour & Wages",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "n": 15,
+   "t": "Other Administrative Exp.",
+   "g": [
+    {
+     "id": "15a",
+     "h": "",
+     "s": 1,
+     "ai": -1,
+     "r": [
+      {
+       "n": "Accounting Fees",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Bank Exp.",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Bank Interest",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Travelling Exp.",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Insurance Premium",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Interest",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Interest On Vehicle Loan",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Labour & Wages",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Professional Fee",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Depreciation (from Depreciation Schedule)",
+       "k": "dep",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Salary",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Diesel",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Processing Fees",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Misc. Shop Exp.",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Staff Welfare",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Repair & Maintenance",
+       "v": [
+        0,
+        0
+       ]
+      },
+      {
+       "n": "Other Exp.",
+       "v": [
+        0,
+        0
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "BS": [
+  {
+   "h": "EQUITY & LIABILITIES",
+   "pre": "I. "
+  },
+  {
+   "k": "cap",
+   "l": "Capital Account",
+   "n": 1,
+   "ref": "s1",
+   "lv": 1
+  },
+  {
+   "k": "sl",
+   "l": "Secured Loan",
+   "n": 2,
+   "ref": "s2",
+   "lv": 1
+  },
+  {
+   "k": "us",
+   "l": "Unsecured Loans",
+   "n": 3,
+   "ref": "s3",
+   "lv": 1
+  },
+  {
+   "h": "Current Liabilities",
+   "lv": 1,
+   "id": "hcl"
+  },
+  {
+   "k": "tp",
+   "l": "Trade Payables",
+   "n": 4,
+   "ref": "s4",
+   "lv": 2
+  },
+  {
+   "k": "pr",
+   "l": "Provisions",
+   "n": 5,
+   "ref": "s5",
+   "lv": 2
+  },
+  {
+   "k": "rol",
+   "l": "Round Off",
+   "ro": 1
+  },
+  {
+   "k": "tel",
+   "l": "Total Equity & Liabilities",
+   "sum": [
+    "cap",
+    "sl",
+    "us",
+    "tp",
+    "pr",
+    "rol"
+   ],
+   "b": 1
+  },
+  {
+   "h": "ASSETS",
+   "pre": "II. "
+  },
+  {
+   "h": "Non-Current Assets",
+   "lv": 1,
+   "id": "hnca"
+  },
+  {
+   "k": "tang",
+   "l": "Property, Plant & Equipment – Tangible Assets",
+   "n": 6,
+   "ref": "tang",
+   "lv": 2
+  },
+  {
+   "k": "lt",
+   "l": "Long term loans and advances",
+   "n": 7,
+   "ref": "s7",
+   "lv": 2
+  },
+  {
+   "h": "Current Assets",
+   "lv": 1,
+   "id": "hca"
+  },
+  {
+   "k": "stk",
+   "l": "Closing Stock",
+   "n": 13,
+   "ref": "g13c",
+   "nonum": 1,
+   "lv": 2
+  },
+  {
+   "k": "tr",
+   "l": "Trade receivables",
+   "n": 8,
+   "ref": "s8",
+   "lv": 2
+  },
+  {
+   "k": "cs",
+   "l": "Cash and cash equivalents",
+   "n": 9,
+   "ref": "s9",
+   "lv": 2
+  },
+  {
+   "k": "du",
+   "l": "Duties & Taxes",
+   "n": 10,
+   "ref": "s10",
+   "lv": 2
+  },
+  {
+   "k": "roa",
+   "l": "Round Off",
+   "ro": 1
+  },
+  {
+   "k": "ta",
+   "l": "Total Assets",
+   "sum": [
+    "tang",
+    "lt",
+    "stk",
+    "tr",
+    "cs",
+    "du",
+    "roa"
+   ],
+   "b": 1
+  }
+ ],
+ "IE": [
+  {
+   "k": "rev",
+   "l": "Revenue From Operations",
+   "n": 11,
+   "ref": "s11",
+   "lv": 1,
+   "inc": 1
+  },
+  {
+   "k": "oi",
+   "l": "Other Income",
+   "n": 12,
+   "ref": "s12",
+   "lv": 1,
+   "inc": 1
+  },
+  {
+   "k": "tr",
+   "l": "Total Revenue",
+   "sum": [
+    "rev",
+    "oi"
+   ],
+   "b": 1,
+   "lv": 1
+  },
+  {
+   "h": "Expenses:",
+   "lv": 1,
+   "id": "hex"
+  },
+  {
+   "k": "ci",
+   "l": "Change In Inventory",
+   "n": 13,
+   "ref": "s13"
+  },
+  {
+   "k": "de",
+   "l": "Direct Exp.",
+   "n": 14,
+   "ref": "s14"
+  },
+  {
+   "k": "ad",
+   "l": "Other Administrative Expenses",
+   "n": 15,
+   "ref": "s15"
+  },
+  {
+   "k": "te",
+   "l": "Total Expenses",
+   "sum": [
+    "ci",
+    "de",
+    "ad"
+   ],
+   "b": 1
+  },
+  {
+   "k": "np",
+   "l": "Profit before tax / Net Profit",
+   "diff": [
+    "tr",
+    "te"
+   ],
+   "b": 1,
+   "lv": 1
+  }
+ ],
+ "_app": "BalanceSheet",
+ "_fmt": "v",
+ "_fn": ""
+}

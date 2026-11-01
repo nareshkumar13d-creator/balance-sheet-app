@@ -1,0 +1,26 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><!--@csp--><meta name="viewport" content="width=device-width,initial-scale=1"><title>Balance Sheet</title>
+<style>
+/*@include shell/shell.css*/
+</style></head><body>
+<div id="bar"><span class="brand"><img src="@LOGO@" alt="" width="32" height="32"><b>Balance Sheet</b></span></div>
+<div id="hd2"><div class="doc"><img id="hlogo" alt="Firm logo" hidden><div><div id="hfirm"></div><div id="hfile"><span id="hname">Untitled</span><span id="hbadge" hidden>&#9679; Unsaved</span></div></div></div><div class="acts" role="toolbar" aria-label="File actions"><button id="hOpen" class="o" title="Open (Ctrl+O)">Open</button><button id="hSave" class="o" title="Save (Ctrl+S)">Save</button><button id="hNext" class="o" title="Start the next year from this file (File menu)" hidden>Next year</button><button id="hLogo" class="o" title="Add your firm logo (shown here and in the Excel file)">Logo</button><button id="hLogoX" class="o" title="Remove logo" aria-label="Remove logo" hidden>&times;</button><input type="file" id="hLogoF" accept="image/png,image/jpeg" hidden><button id="hXl" title="Export to Excel (Ctrl+E)">Export Excel</button><button id="hPdf" title="Export to PDF (Ctrl+Shift+E)" hidden>Export PDF</button><button id="hHelp" class="o" title="Help and quick tour (F1)">Help</button></div></div>
+<div id="vb" hidden></div><div id="fr"></div>
+<script>
+const KIT=@KIT@;
+const F=[/*@F*/];
+const bar=document.getElementById('bar'),fr=document.getElementById('fr');
+function show(k){F.forEach(([id,,src])=>{let f=document.getElementById('f_'+id),b=document.getElementById('b_'+id);
+  if(id===k){if(!f){f=document.createElement('iframe');f.id='f_'+id;f.title=id;
+    f.srcdoc=KIT?src.replace('<head>','<head><base href="'+location.href.replace(/"/g,'&quot;')+'">'+(window.bsNative?'<style>.bar #xl,.bar #sv,.bar #ld{display:none}.tabs,.bar{margin:10px 0}</style>':'')):src;f.onload=()=>{window.bsOnFrame&&window.bsOnFrame(id)};fr.appendChild(f)}f.classList.add('on');b.classList.add('on')}
+  else{if(f)f.classList.remove('on');b.classList.remove('on')}});
+ try{localStorage.setItem('bsFormat',k)}catch(e){}
+ window.bsTick&&window.bsTick()}
+F.forEach(([id,l])=>{const b=document.createElement('button');b.id='b_'+id;b.textContent=l;b.onclick=()=>show(id);bar.appendChild(b)});
+const n=document.createElement('span');n.textContent='Each format keeps its own data. Switching does not erase anything.';bar.appendChild(n);
+let k='h';try{const s=localStorage.getItem('bsFormat');if(F.some(x=>x[0]===s))k=s}catch(e){}
+show(k);
+</script>
+<script>
+/*@include shell/shell.js*/
+</script>
+</body></html>

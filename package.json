@@ -1,0 +1,74 @@
+{
+  "name": "balance-sheet",
+  "productName": "Balance Sheet",
+  "version": "2.0.0",
+  "description": "Balance Sheet - Vertical (Schedule III), Horizontal and Annexure formats (offline desktop app)",
+  "author": {
+    "name": "Your Firm Name"
+  },
+  "main": "main.js",
+  "scripts": {
+    "build": "node build.js",
+    "prepare-lib": "node scripts/copy-lib.js",
+    "start": "npm run build && npm run prepare-lib && electron .",
+    "test": "node --test tests/app.test.js",
+    "fixtures": "node tests/make-fixtures.js",
+    "dist": "npm run build && npm run prepare-lib && electron-builder --win nsis --x64 --publish never",
+    "dist:release": "npm run build && npm run prepare-lib && electron-builder --win nsis --x64 --publish never -c.publish.provider=github"
+  },
+  "dependencies": {
+    "xlsx-js-style": "1.2.0",
+    "jszip": "3.10.1",
+    "electron-updater": "6.3.9"
+  },
+  "devDependencies": {
+    "electron": "33.2.0",
+    "electron-builder": "25.1.8",
+    "playwright-core": "1.56.0"
+  },
+  "build": {
+    "appId": "com.balancesheet.app",
+    "productName": "Balance Sheet",
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Balance Sheet",
+      "artifactName": "BalanceSheet_Setup.${ext}",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "runAfterFinish": true,
+      "perMachine": false
+    },
+    "copyright": "Copyright (c) 2026 Your Firm Name",
+    "fileAssociations": [
+      {
+        "ext": "bsdata",
+        "name": "Balance Sheet data",
+        "description": "Balance Sheet data file",
+        "role": "Editor"
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "docs/User_Guide.pdf",
+        "to": "User_Guide.pdf"
+      }
+    ]
+  }
+}

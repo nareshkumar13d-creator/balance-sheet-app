@@ -1,0 +1,18 @@
+
+:root{--bg:#f6f7f4;--card:#fff;--ink:#1d2a26;--mut:#5d6b66;--line:#d5dbd6;--acc:#1f5c4a;--accbg:#e4efe9;--bad:#b3261e;--on:#fff}
+@media (prefers-color-scheme:dark){:root{--bg:#141a18;--card:#1b2320;--ink:#e6ece8;--mut:#9aa8a2;--line:#33403b;--acc:#6fcfa8;--accbg:#22352d;--bad:#ff8a80;--on:#0d1411}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Noto Sans","Segoe UI",sans-serif;padding:14px}
+.w{max-width:980px;margin:0 auto}h1{font:600 21px Georgia,serif;margin:0 0 10px}h3{font:600 15px Georgia,serif;margin:0;padding:8px 10px;background:var(--accbg)}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:12px}
+label{font-size:12px;color:var(--mut)}input,select{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:5px 7px;width:100%}
+input[type=number]{text-align:right}input:focus-visible,button:focus-visible{outline:2px solid var(--acc)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+button{font:600 13px inherit;font-family:inherit;border:1px solid var(--acc);background:var(--acc);color:var(--on);border-radius:5px;padding:8px 14px;cursor:pointer}
+button.o{background:transparent;color:var(--acc)}button.sm{padding:2px 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:14px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:560px}td,th{padding:4px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{background:var(--acc);color:var(--on);font-size:13px}.n{text-align:right}td.v{width:150px}td.nt{width:70px;text-align:center}
+.b td{font-weight:700;background:var(--accbg)}.hd td{font-weight:600;text-decoration:underline}
+.chk{margin:10px 0;padding:9px 12px;border-radius:6px;background:var(--accbg);font-weight:600}.chk.bad{color:var(--bad)}
+.c{text-align:center;font-weight:700}.pn{display:none}.pn.on{display:block}.bar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}

@@ -1,0 +1,29 @@
+<script>
+/* Helpers shared by the three formats (used by window.bsApi, see each app's last script) */
+const bsSafe=t=>String(t||'').trim().replace(/[\\/:*?"<>|]/g,'').replace(/\.(json|bsdata)$/i,'');
+const bsOkDate=s=>{const m=/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(String(s||'').trim());if(!m)return null;const d=+m[1],mo=+m[2],y=+m[3],t=new Date(y,mo-1,d);return t.getFullYear()===y&&t.getMonth()===mo-1&&t.getDate()===d?t:null};
+/* collect the finished statements (read-only tabs) for PDF / print */
+function bsPrintDoc(want){
+ const bt=[...document.querySelectorAll('#tabs button')],act=document.querySelector('.pn.on'),actId=act?act.id:null,parts=[];
+ for(const re of want){const b=bt.find(x=>re.test(x.textContent.trim()));if(!b)continue;b.click();const p=document.querySelector('.pn.on');if(p)parts.push(p.innerHTML)}
+ if(actId){for(const b of bt){b.click();const p=document.querySelector('.pn.on');if(p&&p.id===actId)break}}
+ return{css:[...document.querySelectorAll('style')].map(s=>s.textContent).join('\n'),parts}
+}
+/* Excel-like keys in the entry grids: Enter / Shift+Enter, and Up / Down on amount cells, move to the cell below / above */
+document.addEventListener('keydown',e=>{
+ const el=e.target;if(!el||el.tagName!=='INPUT'||el.readOnly||el.disabled||e.ctrlKey||e.altKey||e.metaKey)return;
+ const num=el.type==='number',k=e.key;let dir=0;
+ if(/^(text|number)$/.test(el.type)&&k==='Enter')dir=e.shiftKey?-1:1;
+ else if(num&&!e.shiftKey&&k==='ArrowDown')dir=1;else if(num&&!e.shiftKey&&k==='ArrowUp')dir=-1;
+ if(!dir)return;
+ const td=el.closest('td');if(!td)return;
+ e.preventDefault();
+ const tr=td.parentElement,rows=[...tr.closest('table').rows],ci=td.cellIndex;
+ for(let i=rows.indexOf(tr)+dir;i>=0&&i<rows.length;i+=dir){
+  const c=rows[i].cells[ci],n=c&&c.querySelector('input:not([type=checkbox]):not([type=hidden]):not([type=file]):not([readonly]):not([disabled])');
+  if(n&&n.offsetParent!==null){n.focus();try{n.select()}catch(x){}return}
+ }
+});
+/* in the desktop app the buttons Save data / Load data are handled by the shell (real Windows Save / Open windows) */
+document.addEventListener('click',e=>{const p=window.parent;if(!p||p===window||!p.bsHasNative)return;const b=e.target.closest&&e.target.closest('#sv,#ld');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.id==='sv')p.bsSave();else p.bsOpen()},true);
+</script>

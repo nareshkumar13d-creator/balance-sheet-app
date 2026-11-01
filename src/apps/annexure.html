@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en"><head><!--@include shared/dialogs.html-->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balance Sheet</title>
+<!--@libs-->
+<!--@include shared/xlsx-pagesetup.html-->
+<style>
+/*@include shared/base.css*/
+/* annexure: small differences from the other formats */
+.tabs,.bar{gap:6px;margin:10px 0}td.nt{width:60px}
+</style></head><body><div class="w">
+<div id="fyl" style="font-size:14px;font-weight:600;color:var(--acc);margin:0 0 2px"></div><h1>Balance Sheet</h1>
+<div class="meta">
+<div><label>Firm Name</label><input data-m="firm"></div>
+<div><label>Address</label><input data-m="addr"></div>
+<div><label>Balance sheet date (dd.mm.yyyy)</label><input data-m="d" value="31.03.2026" maxlength="10" inputmode="numeric"></div>
+<div><label>Assessment Year</label><input data-m="ay" value="2026-27"></div>
+<div><label>Business type</label><select data-m="mode"><option value="B">Business / Trading (Sale, Purchase, Stock)</option><option value="P">Profession – 44ADA</option><option value="A">Business – 44AD (Turnover)</option><option value="I">Income &amp; Expenditure</option></select></div>
+</div>
+<!--@include shared/auditor-form.html-->
+<div class="tabs" id="tabs"></div>
+<div id="in" class="pn on"></div><div id="bs" class="pn"></div><div id="pl" class="pn"></div><div id="cap" class="pn"></div>
+<div class="bar"><input id="fn" placeholder="File name (optional)" aria-label="File name" style="width:230px"><button id="xl">Export to Excel (.xlsx)</button><button class="o" id="sv">Save data</button><button class="o" id="ld">Load data</button><button class="o" id="imp">Import Excel</button><input type="file" id="ldf" accept=".json,.bsdata" hidden><button class="o" id="ca">Clear amounts</button><button class="o" id="rs">Reset all</button><input type="file" id="impf" accept=".xlsx,.xlsm,.xls,.xlsb,.xltx,.xltm,.xlt" hidden></div>
+<p style="color:var(--mut);font-size:12px">Enter data only in the "Enter Data" tab. Balance Sheet, Trading &amp; P&amp;L, Capital Account, Annexures B–H and the fixed asset account are built automatically. Capital closing balance = Opening + Additions + Net Profit − Drawings.</p>
+</div>
+<script>
+const N=x=>+x||0,esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),
+fmt=n=>N(n).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:2});
+const SEC=[['sales','Sales'],['pur','Purchase'],['exp','Expenses (Bank Charges, Shop Exp., Audit Fees ...)'],['oi','Other Income (Interest, Discount ...)'],['cadd','Capital A/c – Additions (Bank, Cash, Interest ...)'],['cdr','Capital A/c – Drawings / Deductions'],
+['B','Secured Loans','Secured Loan'],['C','Unsecured Loans','Unsecured Loan'],['D','Sundry Creditors','Sundry Creditors'],['E','Other Provisions','Other Provisions'],['F','Loans & Advances','Loan & Advances'],['G','Sundry Debtors','Sundry Debtors'],['H','Duties & Taxes','Duties & Taxes'],
+['cash','Cash & Bank Balances (Cash in Hand, Bank ...)','Cash & Bank Balances'],['dep','Deposits / Security']];
+const row=n=>({n:n||'',v:''}),fr=()=>({n:'',r:'',o:'',a1:'',a2:'',d:''});
+const PR={P:['Gross Receipts from Profession – summary',[['Presumptive Income u/s 44ADA @ 50%',.5]]],A:['Business Turnover – summary',[['Presumptive Income u/s 44AD @ 8%',.08],['Presumptive Income u/s 44AD @ 6% (digital receipts)',.06]]]};
+const UNITS=[['KGS','Kilograms'],['QTL','Quintal'],['PCS','Pieces'],['NOS','Numbers'],['MTS','Metric Tons'],['TON','Tonnes'],['LTR','Litres'],['BAG','Bags'],['BOX','Box'],['MTR','Metres'],['GMS','Grams'],['DOZ','Dozens'],['PAC','Packs'],['PRS','Pairs'],['SET','Sets'],['UNT','Units'],['BAL','Bale'],['BDL','Bundles'],['BKL','Buckles'],['BOU','Billions of Units'],['BTL','Bottles'],['BUN','Bunches'],['CAN','Cans'],['CBM','Cubic Meters'],['CCM','Cubic Centimeters'],['CMS','Centimeters'],['CTN','Cartons'],['DRM','Drums'],['GGR','Great Gross'],['GRS','Gross'],['GYD','Gross Yards'],['KLR','Kilolitre'],['KME','Kilometre'],['MLT','Millilitre'],['ROL','Rolls'],['SQF','Square Feet'],['SQM','Square Meters'],['SQY','Square Yards'],['TBS','Tablets'],['TGM','Ten Gross'],['THD','Thousands'],['TUB','Tubes'],['UGS','US Gallons'],['YDS','Yards'],['OTH','Others']];
+const unitOpts=u=>'<option value="">Unit</option>'+UNITS.map(([c,n])=>`<option value="${c}"${c===u?' selected':''}>${c} – ${n}</option>`).join('');
+const fmtQ=n=>(Math.round(n*1000)/1000).toLocaleString('en-IN',{maximumFractionDigits:3});
+const qs=(q,u)=>N(q)?` (${fmtQ(N(q))}${u?' '+u:''})`:'';
+const qtRows=()=>D.tb.filter(b=>(N(b.os)&&N(b.osq))||(N(b.pur)&&N(b.purq))||(N(b.sale)&&N(b.saleq))||(N(b.cs)&&N(b.csq))).map(b=>{const o=N(b.os)?N(b.osq):0,p=N(b.pur)?N(b.purq):0,sl=N(b.sale)?N(b.saleq):0,c=N(b.cs)?N(b.csq):0;return{name:b.n||'Trading',u:b.u||'',o,p,s:sl,c,sh:Math.round((o+p-sl-c)*1000)/1000}});
+const fq=v=>v<0?'('+fmtQ(-v)+')':fmtQ(v);
+const qtHtml=()=>{if(D.mode!=='B')return'';const Q=qtRows();if(!Q.length)return'';
+ return `<div class="card"><div class="c">${esc(D.firm)}</div><div class="c">Quantitative Details for the year ending on ${esc(D.d)}</div><table style="min-width:700px"><tr><th>Block / Item</th><th>Unit</th><th class="n">Opening Stock</th><th class="n">Purchases</th><th class="n">Sales</th><th class="n">Closing Stock</th><th class="n">Shortage / (Excess)</th></tr>${Q.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.u||'—')}</td><td class="n">${fmtQ(x.o)}</td><td class="n">${fmtQ(x.p)}</td><td class="n">${fmtQ(x.s)}</td><td class="n">${fmtQ(x.c)}</td><td class="n">${fq(x.sh)}</td></tr>`).join('')}</table></div><p style="color:var(--mut);font-size:12px">Shortage / (Excess) = Opening Stock + Purchases − Sales − Closing Stock. Positive = shortage, in brackets = excess.</p>`};
+const tb0=()=>({n:'',os:'',pur:'',sale:'',cs:'',osq:'',purq:'',saleq:'',csq:'',u:''});
+const DEF={sales:['Sale 1','Sale 2'],pur:['Purchase 1','Purchase 2'],exp:['Accounting Fees','Bank Exp.','Bank Interest','Travelling Exp.','Insurance Premium','Interest','Interest On Vehicle Loan','Labour & Wages','Professional Fee','Salary','Diesel','Processing Fees','Misc. Shop Exp.','Staff Welfare','Repair & Maintenance','Other Exp.'],oi:['Interest Received','Labour Received'],cadd:['Cash Introduced','Bank Introduced','Interest'],cdr:['Drawings','Income Tax Paid','Insurance Premium'],B:['Bank OD Limit','Term Loan'],C:['Party 1','Party 2','Party 3'],D:['Party 1','Party 2','Party 3'],E:['TDS Payable','Salary Payable','GST'],F:['Advance To Farmers','Security Deposits','Party 1'],G:['Party 1','Party 2','Party 3'],H:['TDS','GST'],cash:['Bank A/c 1','Bank A/c 2','Cheque In Hand','Cash In Hand'],dep:['Security Deposit 1','Security Deposit 2']};
+const mkc=pct=>({prop:'',ob:'',pct,add:DEF.cadd.map(n=>row(n)),dr:DEF.cdr.map(n=>row(n))});
+const migr=o=>{const d=migSig(Object.assign(mk(),o));if(!Array.isArray(o.caps)){const c=mkc(100);c.prop=o.prop||'';c.ob=o.ob||'';if(o.L&&o.L.cadd)c.add=o.L.cadd;if(o.L&&o.L.cdr)c.dr=o.L.cdr;d.caps=[c]}return d};
+const mk=()=>({tb:[tb0()],mode:'B',firm:'',addr:'',d:'31.03.2026',ay:'2026-27',caps:[mkc(100)],os:'',cs:'',
+ L:Object.fromEntries(SEC.map(([k])=>[k,(DEF[k]||['','','']).map(n=>row(n))])),fa:[fr()],xs:[],xc:[],show:'Y',caFirm:'',caType:'Chartered Accountants',caName:'',caDesig:'Partner',caNo:'',caUdin:'',caFrn:'',place:'',dsign:'',sg:'sd/-',sg1:'Prop.',logo:''});
+let D=mk();
+const xsd=x=>x.rows.reduce((t,r)=>t+N(r.v),0),xrow=()=>({n:'',v:''});
+const xside=x=>x.u==='A'||x.u==='L'?x.u:((D.xc.find(c=>c.id===x.u)||{}).side||'L');
+const xsum=side=>D.xs.filter(x=>xside(x)===side).reduce((t,x)=>t+xsd(x),0);
+/*@include shared/sig.js X=D*/
+const caHtml=()=>sigHtml();
+const dpc=d=>{const b=N(d.o)+N(d.a1)+N(d.a2)-N(d.d),p=Math.round((N(d.o)+N(d.a1)-N(d.d))*N(d.r)/100+N(d.a2)*N(d.r)/200);return{b,p,c:b-p}};
+const sum=k=>D.L[k].reduce((t,x)=>t+N(x.v),0);
+const pick=(k,pre)=>D.L[k].filter(x=>N(x.v)).map(x=>[pre+(x.n||''),N(x.v)]);
+function C(){const fa=D.fa.filter(d=>N(d.o)||N(d.a1)||N(d.a2)).map(d=>({d,...dpc(d)})),dep=fa.reduce((t,x)=>t+x.p,0),
+ T0=D.mode==='B',cs=T0?D.tb.reduce((t,b)=>t+N(b.cs),0):0,gp=T0?D.tb.reduce((t,b)=>t+N(b.sale)+N(b.cs)-N(b.os)-N(b.pur),0):0,np=(T0?gp:sum('sales'))+sum('oi')-sum('exp')-dep,
+ cps=D.caps.map(c=>{const sh=np*N(c.pct)/100;return{c,sh,cl:N(c.ob)+c.add.reduce((t,x)=>t+N(x.v),0)+sh-c.dr.reduce((t,x)=>t+N(x.v),0)}}),cl=cps.reduce((t,x)=>t+x.cl,0),tl=cl+sum('B')+sum('C')+sum('D')+sum('E')+xsum('L'),
+ ta=sum('F')+sum('G')+cs+sum('cash')+sum('H')+fa.reduce((t,x)=>t+x.c,0)+sum('dep')+xsum('A');
+ return{fa,dep,gp,np,cl,cps,tl,ta,T0,cs}}
+/* Annexure letters: Capital A..; then Liabilities (Secured, Unsecured, Creditors, Provisions, own schedules); then Assets, in Balance Sheet order */
+function annexOrder(o){const NC=D.caps.length,SK=o.T0&&o.cs?1:0,XN=D.xs.filter(x=>xsd(x)),AN=SEC.filter(s=>s[2]&&sum(s[0])),
+ an=ks=>ks.map(k=>AN.find(s=>s[0]===k)).filter(Boolean).map(s=>({t:'an',k:s[0],h:s[2]})),
+ xo=side=>[...XN.filter(x=>x.u===side),...D.xc.filter(c=>c.side===side).flatMap(c=>XN.filter(x=>x.u===c.id))].map(x=>({t:'x',x})),
+ ORD=[...an(['B','C','D','E']),...xo('L'),...an(['F','G']),...(SK?[{t:'stk'}]:[]),...an(['cash','H']),...xo('A')],LT={},XL={};
+ ORD.forEach((a,i)=>{const c=String.fromCharCode(65+NC+i);if(a.t==='stk')LT.STK=c;else if(a.t==='an')LT[a.k]=c;else XL[a.x.id]=c});
+ return{ORD,LT,XL,XN,SK}}
+const tf=(L,R)=>{const n=Math.max(L.length,R.length),rows=[];
+ for(let i=0;i<n;i++){const a=L[i]||['',null],b=R[i]||['',null];rows.push([a[0],a[1],b[0],b[1]])}
+ const s=x=>x.reduce((t,y)=>t+N(y[1]),0);rows.push(['Total',s(L),'Total',s(R),1]);return rows};
+function blocks(){const o=C(),dt=D.d,NC=D.caps.length,{ORD,LT,XL,XN,SK}=annexOrder(o),sg=(t,k,v)=>LT[k]?[[t,null],["(As per Annexure '"+LT[k]+"')",v??sum(k)]]:[],T=[D.firm,D.addr],H=['PARTICULARS','AMOUNT(Rs)','PARTICULARS','AMOUNT(Rs)'],gl=o.gp<0,
+ grp=(t,r)=>r.length?[[t,null],...r]:[];
+ const xg=x=>[[x.n||'Schedule',null],["(As per Annexure '"+XL[x.id]+"')",xsd(x)]],
+ xblock=side=>[...XN.filter(x=>x.u===side).flatMap(xg),...D.xc.filter(c=>c.side===side).flatMap(c=>{const m=XN.filter(x=>x.u===c.id);return m.length?[[c.n+':',null],...m.flatMap(xg)]:[]})];
+ const bsL=[['Capital Account:',null],...(NC>1?o.cps.map((x,i)=>[(x.c.prop||'Partner '+(i+1))+" (As per Annexure '"+String.fromCharCode(65+i)+"')",x.cl]):[["(As per Annexure 'A')",o.cl]]),...sg('Secured Loans','B'),...sg('Unsecured Loans','C'),...sg('Sundry Creditors','D'),...sg('Other Provisions','E'),...xblock('L')],
+ bsR=[...sg('Loans & Advances','F'),...sg('Sundry Debtors','G'),...sg('Closing Stock','STK',o.cs),
+  ...sg('Cash & Bank Balances','cash'),...sg('Duties & Taxes','H'),
+  ...grp('Fixed Assets',o.fa.map(x=>[x.d.n||'Fixed Asset',x.c])),...grp('Deposits',pick('dep','')),...xblock('A')];
+ const bs=[{t:[...T,'BALANCE SHEET AS AT '+dt],h:['LIABILITIES','AMOUNT(Rs)','ASSETS','AMOUNT(Rs)'],rows:tf(bsL,bsR)}];
+ const pln=[{t:[...T,({P:'PROFIT & LOSS ACCOUNT',A:'PROFIT & LOSS ACCOUNT',I:'INCOME & EXPENDITURE ACCOUNT'}[D.mode])+' FOR THE YEAR ENDING ON '+dt],h:H,rows:tf([...pick('exp','To '),...(o.dep?[['To Depreciation',o.dep]]:[]),...(o.np>=0?[["To Net Profit Transfer to Prop's Cap. A/c",o.np]]:[])],[...pick('sales','By Gross Receipts – '),...pick('oi','By '),...(o.np<0?[["By Net Loss Transfer to Prop's Cap. A/c",-o.np]]:[])])}];
+ if(PR[D.mode]){const g=sum('sales');pln.push({t:[PR[D.mode][0]],w:2,h:['Particulars','Amount'],rows:[['Gross Receipts / Turnover',g],['Net Profit as per Profit & Loss A/c',o.np],['Net Profit as % of receipts',g?Math.round(o.np/g*10000)/100:0],...PR[D.mode][1].map(([l,k])=>[l,g*k])]})}
+ const tbs=D.tb.filter(b=>N(b.os)||N(b.pur)||N(b.sale)||N(b.cs)),TL='TRADING & PROFIT & LOSS ACCOUNT FOR THE YEAR ENDING ON '+dt,
+ trb=(tbs.length?tbs:[D.tb[0]]).map((b,i)=>{const g=N(b.sale)+N(b.cs)-N(b.os)-N(b.pur);return{t:[...(i?[]:[...T,TL]),(b.n||'Trading'+(tbs.length>1?' '+(i+1):''))+' A/c :-'],h:H,rows:tf([['To Opening Stock'+(N(b.os)?qs(b.osq,b.u):''),N(b.os)],['To Purchase'+(N(b.pur)?qs(b.purq,b.u):''),N(b.pur)],...(g<0?[]:[['To Gross Profit',g]])],[['By Sale'+(N(b.sale)?qs(b.saleq,b.u):''),N(b.sale)],['By Closing Stock'+(N(b.cs)?qs(b.csq,b.u):''),N(b.cs)],...(g<0?[['By Gross Loss',-g]]:[])])}});
+ const pl=!o.T0?pln:[...trb,
+  {t:[],h:H,rows:tf([...(gl?[['To Gross Loss b/f',-o.gp]]:[]),...pick('exp','To '),...(o.dep?[['To Depreciation',o.dep]]:[]),...(o.np>=0?[["To Net Profit Transfer to Prop's Cap. A/c",o.np]]:[])],
+   [...(gl?[]:[['By Gross Profit b/f',o.gp]]),...pick('oi','By '),...(o.np<0?[["By Net Loss Transfer to Prop's Cap. A/c",-o.np]]:[])])}];
+ const pk=(r,p)=>r.filter(x=>N(x.v)).map(x=>[p+(x.n||''),N(x.v)]);
+ const cap=o.cps.map((x,i)=>({t:[...(i?[]:T),'CAPITAL ACCOUNT FOR THE A.Y '+D.ay+(NC>1?' ('+N(x.c.pct)+'%)':''),(x.c.prop||'').toUpperCase(),'ANNEXURE : '+String.fromCharCode(65+i)+' :'],h:H,
+  rows:tf([...pk(x.c.dr,'To '),...(x.sh<0?[['To Net Loss',-x.sh]]:[]),['To Closing Balance',x.cl]],[['By Balance b/f',N(x.c.ob)],...pk(x.c.add,'By '),...(x.sh>=0?[['By Net Profit',x.sh]]:[])])}));
+ ORD.forEach(a=>{const ttl=n=>[`ANNEXURE : ${n} : List Of ${a.t==='stk'?'Closing Stock':a.t==='an'?a.h:(a.x.n||'Schedule')} As On ${dt}`];
+  if(a.t==='stk')cap.push({t:ttl(LT.STK),w:2,h:['Particulars','Amount(Rs)'],rows:[...D.tb.filter(b=>N(b.cs)).map((b,i)=>[`${i+1}. ${b.n||'Stock in Hand'}${qs(b.csq,b.u)}`,N(b.cs)]),['Total',o.cs,'','',1]]});
+  else if(a.t==='an')cap.push({t:ttl(LT[a.k]),w:2,h:['Particulars','Amount(Rs)'],rows:[...D.L[a.k].filter(x=>N(x.v)).map((x,i)=>[`${i+1}. ${x.n}`,N(x.v)]),['Total',sum(a.k),'','',1]]});
+  else cap.push({t:ttl(XL[a.x.id]),w:2,h:['Particulars','Amount(Rs)'],rows:[...a.x.rows.filter(r=>N(r.v)).map((r,i)=>[`${i+1}. ${r.n}`,N(r.v)]),['Total',xsd(a.x),'','',1]]})});
+ o.fa.forEach(x=>cap.push({t:[`${x.d.n||'Fixed Asset'} Account as on ${dt}`],h:H,
+  rows:tf([['To Opening Balance',N(x.d.o)],...(N(x.d.a1)?[['To Addition (more than 6 months)',N(x.d.a1)]]:[]),...(N(x.d.a2)?[['To Addition (less than 6 months)',N(x.d.a2)]]:[])],
+   [[`By Depreciation @ ${N(x.d.r)}%`,x.p],...(N(x.d.d)?[['By Deletion',N(x.d.d)]]:[]),['By Closing Balance',x.c]])}));
+ return{bs,pl,cap,o}}
+const cell=(l,a)=>`<td${a==null&&l?' style="font-weight:700"':''}>${esc(l)}</td><td class="n">${a==null||a===''?'':fmt(a)}</td>`;
+const html=bl=>bl.map(b=>`<div class="card">${b.t.filter(Boolean).map(x=>`<div class="c">${esc(x)}</div>`).join('')}<table>${b.h?'<tr>'+b.h.map((x,i)=>`<th${i%2?' class="n"':''}>${esc(x)}</th>`).join('')+'</tr>':''}${b.rows.map(r=>`<tr${r[4]?' class="b"':''}>${cell(r[0],r[1])}${b.w===2?'':cell(r[2],r[3])}</tr>`).join('')}</table></div>`).join('');
+function refresh(){const B=blocks(),df=B.o.tl-B.o.ta,ok=Math.abs(df)<.005;liveAuto(B.o);
+ document.getElementById('bs').innerHTML=html(B.bs)+caHtml()+`<div class="chk${ok?'':' bad'}">${ok?'The Balance Sheet is balanced.':'Not balanced: difference (Liabilities − Assets) '+fmt(df)}</div>`;
+ document.getElementById('pl').innerHTML=html(B.pl)+caHtml();document.getElementById('cap').innerHTML=html(B.cap)+qtHtml()}
+const TBC=()=>`<div class="card"><h3>Trading A/c blocks (each block gets its own Trading A/c. Second line of each block = Unit and Quantity)</h3><table style="min-width:700px"><tr><th>Block name</th><th>Opening Stock</th><th>Purchase</th><th>Sale</th><th>Closing Stock</th><th></th></tr>${D.tb.map((b,i)=>`<tr><td><input data-b="${i}" data-f="n" placeholder="abc" value="${esc(b.n)}"></td>${['os','pur','sale','cs'].map(f=>`<td><input type="number" step="0.01" data-b="${i}" data-f="${f}" value="${esc(b[f])}"></td>`).join('')}<td class="nt"><button class="sm o" data-bdel="${i}" aria-label="Delete block">×</button></td></tr><tr><td><select data-b="${i}" data-f="u" aria-label="Unit">${unitOpts(b.u)}</select></td>${['osq','purq','saleq','csq'].map(f=>`<td><input type="number" step="0.001" placeholder="Qty" aria-label="Quantity" data-b="${i}" data-f="${f}" value="${esc(b[f])}"></td>`).join('')}<td></td></tr>`).join('')}<tr><td colspan="6"><button class="sm o" data-badd="1">+ Add block</button></td></tr></table></div>`;
+const xOpts=()=>`<option value="L">Equity &amp; Liabilities (like Capital / Loans)</option><option value="A">Assets (like Loans &amp; Advances / Debtors)</option>`+D.xc.map(c=>`<option value="${esc(c.id)}">Under: ${esc(c.n)} (${c.side==='L'?'Liabilities':'Assets'})</option>`).join('');
+const xAddCards=()=>`<div class="card" style="padding:10px"><b>Add a new schedule</b><div class="meta" style="margin:8px 0"><div><label>Schedule name</label><input id="ns_t" placeholder="abc"></div><div><label>Show under</label><select id="ns_w">${xOpts()}</select></div></div><button data-xnew="1">+ Add schedule</button></div><div class="card" style="padding:10px"><b>Add a new section (new liability / asset heading)</b><div class="meta" style="margin:8px 0"><div><label>Section name</label><input id="ns_sec" placeholder="abc"></div><div><label>Side</label><select id="ns_sd"><option value="L">Liabilities</option><option value="A">Assets</option></select></div></div><button data-xsec="1">+ Add section</button>${D.xc.map((c,i)=>` <button class="sm o" data-xsecdel="${i}" aria-label="Delete section">× ${esc(c.n)}</button>`).join('')}</div>`;
+const xCards=()=>D.xs.map((x,xi)=>`<div class="card"><h3 style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input data-xs="${xi}" data-f="name" value="${esc(x.n)}" placeholder="abc" style="flex:1;min-width:160px;font-weight:600"><span style="font-weight:400;color:var(--mut);font-size:12px">(${xside(x)==='L'?'Liabilities':'Assets'} side)</span><button class="sm o" data-xsdel="${xi}" aria-label="Delete schedule">× Delete schedule</button></h3><table>${x.rows.map((r,i)=>`<tr><td><input data-xs="${xi}" data-xi="${i}" data-f="n" placeholder="Particulars" value="${esc(r.n)}"></td><td class="v"><input type="number" step="0.01" data-xs="${xi}" data-xi="${i}" data-f="v" value="${esc(r.v)}"></td><td class="nt"><button class="sm o" data-xrdel="${xi}|${i}" aria-label="Delete row">×</button></td></tr>`).join('')}<tr><td colspan="3"><button class="sm o" data-xradd="${xi}">+ Add row</button></td></tr></table></div>`).join('');
+function renderIn(){const mi=(m,l,t)=>`<div><label>${l}</label><input data-m="${m}" ${t?'':'type="number" step="0.01" '}value="${esc(D[m])}"></div>`;
+ let h=capCards();
+ h+=xAddCards()+xCards();
+ if(D.mode==='B')h+=TBC();SEC.forEach(([k,t])=>{if(k==='pur'||k==='cadd'||k==='cdr'||(k==='sales'&&D.mode==='B'))return;if(k==='sales')t='Gross Receipts / Turnover';h+=`<div class="card"><h3>${esc(t)}</h3><table>${D.L[k].map((x,i)=>`<tr><td><input data-k="${k}" data-i="${i}" data-f="n" placeholder="Particulars" value="${esc(x.n)}"></td><td class="v"><input type="number" step="0.01" data-k="${k}" data-i="${i}" data-f="v" value="${esc(x.v)}"></td><td class="nt"><button class="sm o" data-del="${k}|${i}" aria-label="Delete row">×</button></td></tr>`+(k==='exp'&&i===Math.min(8,D.L.exp.length-1)?DEPROW:'')).join('')}<tr><td colspan="3"><button class="sm o" data-add="${k}">+ Add row</button></td></tr></table></div>`});
+ h+=`<div class="card"><h3>Fixed Assets (Depreciation as per Income Tax)</h3><table style="min-width:760px"><tr><th>Asset / Block</th><th>Rate %</th><th>Opening WDV</th><th>Add &gt;6 month</th><th>Add &lt;6 month</th><th>Deletion</th><th></th></tr>${D.fa.map((d,i)=>`<tr><td><input data-p="${i}" data-f="n" value="${esc(d.n)}"></td>${['r','o','a1','a2','d'].map(f=>`<td><input type="number" step="0.01" data-p="${i}" data-f="${f}" value="${esc(d[f])}"></td>`).join('')}<td class="nt"><button class="sm o" data-pdel="${i}" aria-label="Delete row">×</button></td></tr>`).join('')}<tr><td colspan="7"><button class="sm o" data-padd="1">+ Add asset</button></td></tr></table></div>`;
+ document.getElementById('in').innerHTML=h}
+document.getElementById('tabs').innerHTML=[['in','Enter Data'],['bs','Balance Sheet'],['pl','Trading & P&L'],['cap','Capital & Annexures']].map(([i,l],k)=>`<button class="${k?'o':''}" data-tab="${i}">${l}</button>`).join('');
+document.addEventListener('input',e=>{const t=e.target,d=t.dataset;
+ if(d.m){if(d.m==='d'||d.m==='dsign'){const x=t.value.replace(/\D/g,'').slice(0,8);t.value=x.length>4?x.slice(0,2)+'.'+x.slice(2,4)+'.'+x.slice(4):x.length>2?x.slice(0,2)+'.'+x.slice(2):x}D[d.m]=t.value;if(d.m==='mode')renderIn()}
+ if(d.k)D.L[d.k][+d.i][d.f]=t.value;if(d.p!==undefined)D.fa[+d.p][d.f]=t.value;if(d.b!==undefined)D.tb[+d.b][d.f]=t.value;refresh()});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.tab){document.querySelectorAll('.pn').forEach(p=>p.classList.toggle('on',p.id===d.tab));document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('o',x!==b));return}
+ if(d.add)D.L[d.add].push(row());if(d.del){const[k,i]=d.del.split('|');D.L[k].splice(+i,1);if(!D.L[k].length)D.L[k].push(row())}
+ if(d.badd)D.tb.push(tb0());if(d.bdel){D.tb.splice(+d.bdel,1);if(!D.tb.length)D.tb.push(tb0())}
+ if(d.padd)D.fa.push(fr());if(d.pdel){D.fa.splice(+d.pdel,1);if(!D.fa.length)D.fa.push(fr())}
+ if(d.add||d.del||d.padd||d.pdel||d.badd||d.bdel){renderIn();refresh()}});
+document.addEventListener('input',e=>{const t=e.target,d=t.dataset;if(d.xs===undefined)return;const x=D.xs[+d.xs];if(!x)return;if(d.f==='name')x.n=t.value;else x.rows[+d.xi][d.f]=t.value;refresh()});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;let ch=0;
+ if(d.xnew){const n=document.getElementById('ns_t').value.trim();if(!n){alert('Please type the schedule name first.');return}D.xs.push({id:'s'+Date.now().toString(36)+D.xs.length,n,u:document.getElementById('ns_w').value,rows:[xrow(),xrow(),xrow()]});ch=1}
+ if(d.xsec){const n=document.getElementById('ns_sec').value.trim();if(!n){alert('Please type the section name first.');return}D.xc.push({id:'c'+Date.now().toString(36)+D.xc.length,n,side:document.getElementById('ns_sd').value});ch=1}
+ if(d.xsecdel!==undefined){const c=D.xc[+d.xsecdel];if(c){D.xs.forEach(x=>{if(x.u===c.id)x.u=c.side});D.xc.splice(+d.xsecdel,1);ch=1}}
+ if(d.xsdel!==undefined){const i=+d.xsdel;ask('Delete this schedule and its rows?',()=>{D.xs.splice(i,1);renderIn();refresh()});return}
+ if(d.xradd!==undefined){D.xs[+d.xradd].rows.push(xrow());ch=1}
+ if(d.xrdel!==undefined){const[i,j]=d.xrdel.split('|').map(Number);D.xs[i].rows.splice(j,1);if(!D.xs[i].rows.length)D.xs[i].rows.push(xrow());ch=1}
+ if(ch){renderIn();refresh()}});
+document.getElementById('rs').onclick=()=>{ask('Reset everything? All names and amounts will be cleared.',()=>{D=mk();document.querySelectorAll('.meta [data-m]').forEach(i=>i.value=D[i.dataset.m]);document.getElementById('fn').value='';renderIn();refresh()})};
+/* ---------- Excel export (T-format, live formulas, blank spacer rows, centred headings, zero lines skipped) ---------- */
+function buildSheets(wb){
+ const o=C(),dt=D.d,NC=D.caps.length,T0=o.T0,NF='#,##0.00;-#,##0.00;;@',CL=i=>'ABCD'[i];
+ const BOLD={font:{bold:true}},CEN={font:{bold:true},alignment:{horizontal:'center'}},RGT={font:{bold:true},alignment:{horizontal:'right'}};
+ const H=['PARTICULARS','AMOUNT(Rs)','PARTICULARS','AMOUNT(Rs)'];
+ const mkS=(n,nc)=>({n,ws:{},mg:[],r:1,late:[],nc:nc||4,b0:4,b1:0});
+ const BD={top:{style:'thin'},bottom:{style:'thin'},left:{style:'thin'},right:{style:'thin'}};
+ const lastRow=s=>Math.max(0,...Object.keys(s.ws).filter(k=>k[0]!=='!').map(k=>+k.match(/\d+/)[0]));
+ const put=(s,c,r,v,f,st)=>{const a=CL(c)+r;
+  if(f){const x={t:'n',v:+v||0,z:NF,s:Object.assign({},st,{alignment:Object.assign({horizontal:'right'},st&&st.alignment)})};s.ws[a]=x;s.late.push(()=>{x.f=String(typeof f==='function'?f():f).replace(/^=/,'')})}
+  else if(typeof v==='number'){const x={t:'n',v,z:NF,s:Object.assign({},st,{alignment:Object.assign({horizontal:'right'},st&&st.alignment)})};s.ws[a]=x}
+  else if(v!==''&&v!=null){const x={t:'s',v:String(v)};if(st)x.s=st;s.ws[a]=x}};
+ const ref=(s,c,r)=>"'"+s.n+"'!"+CL(c)+r;
+ const head=(s,lines,center)=>{lines.filter(Boolean).forEach(t=>{put(s,0,s.r,t,0,center?CEN:BOLD);if(center)s.mg.push({s:{r:s.r-1,c:0},e:{r:s.r-1,c:s.nc-1}});s.r++})};
+ const ttl=(s,x)=>{put(s,0,s.r,x,0,CEN);s.mg.push({s:{r:s.r-1,c:0},e:{r:s.r-1,c:s.nc-1}});s.r++};
+ const hdr=(s,h)=>{h.forEach((t,i)=>put(s,i,s.r,t,0,i%2?RGT:BOLD));s.r++};
+ /* T-account: items, blank row, balancing figure, blank row, Total */
+ const tacc=(s,L,R,bal,compact)=>{const n=Math.max(L.length,R.length);if(!n)return null;
+  const a=s.r,b=a+n-1;
+  L.forEach((x,i)=>{x.row=a+i;put(s,0,a+i,x.l);put(s,1,a+i,x.v,x.f)});
+  R.forEach((x,i)=>{x.row=a+i;put(s,2,a+i,x.l);put(s,3,a+i,x.v,x.f)});
+  let ba=0,bc=0,t=b+2;
+  if(bal){ba=compact?a+L.length+1:b+2;bc=bal.side==='L'?1:3;const last=Math.max(b,ba);t=last+2;const oc=bal.side==='L'?'D':'B',mc=CL(bc),mr=compact?ba-1:b+1,or=compact?last:b+1;
+   put(s,bal.side==='L'?0:2,ba,bal.l);put(s,bc,ba,bal.v,()=>`SUM(${oc}${a}:${oc}${or})-SUM(${mc}${a}:${mc}${mr})`)}
+  const tl=L.reduce((p,x)=>p+x.v,0)+(bal&&bal.side==='L'?bal.v:0),tr=R.reduce((p,x)=>p+x.v,0)+(bal&&bal.side==='R'?bal.v:0);
+  put(s,0,t,'Total',0,BOLD);put(s,2,t,'Total',0,BOLD);
+  put(s,1,t,tl,`SUM(B${a}:B${t-1})`,BOLD);put(s,3,t,tr,`SUM(D${a}:D${t-1})`,BOLD);
+  s.r=t+2;return{a,b,ba,bc,t}};
+ const sigB=s=>{s.b1=lastRow(s);const{L,R,F}=sigModel(),on=sigOn(),nL=Math.max(L.length,R.length),n=Math.max(8,on?nL+(F.length?F.length+1:0):0),s0=s.b1+1;
+  if(on){L.forEach((a,i)=>{if(a.t){put(s,0,s0+1+i,a.t,0,{font:{underline:!!a.u},alignment:{horizontal:'left',indent:a.i||0}});s.mg.push({s:{r:s0+i,c:0},e:{r:s0+i,c:1}})}});
+   R.forEach((b,i)=>{if(b.t){put(s,2,s0+1+i,b.t,0,{alignment:{horizontal:'right'}});s.mg.push({s:{r:s0+i,c:2},e:{r:s0+i,c:3}})}});
+   F.forEach((x,i)=>{put(s,0,s0+2+nL+i,x,0);s.mg.push({s:{r:s0+1+nL+i,c:0},e:{r:s0+1+nL+i,c:1}})})}
+  s.sig={s0,last:s0+n+1};s.box=1};
+ const nz=v=>N(v)!==0;
+ const{ORD,LT,XL,XN,SK}=annexOrder(o);
+ const pl=mkS('pl'),cap=mkS('cap'),bs=mkS('BS');
+ const REF={cs:new Map(),an:{},xs:{},capCl:[],faDep:[],faCl:[],np:()=>'0',stk:null};
+ const depExpr=()=>REF.faDep.length?REF.faDep.join('+'):'0';
+ /* ===== pl : Trading & Profit and Loss ===== */
+ const TL=T0?'TRADING & PROFIT & LOSS ACCOUNT FOR THE YEAR ENDING ON '+dt:({P:'PROFIT & LOSS ACCOUNT',A:'PROFIT & LOSS ACCOUNT',I:'INCOME & EXPENDITURE ACCOUNT'}[D.mode])+' FOR THE YEAR ENDING ON '+dt;
+ head(pl,[D.firm,D.addr,TL],1);pl.r++;pl.b0=pl.r;
+ const gpCells=[];
+ if(T0)D.tb.filter(b=>nz(b.os)||nz(b.pur)||nz(b.sale)||nz(b.cs)).forEach((b,bi,ba)=>{
+  const L=[],R=[];
+  if(nz(b.os))L.push({l:'To Opening Stock'+qs(b.osq,b.u),v:N(b.os)});
+  if(nz(b.pur))L.push({l:'To Purchase'+qs(b.purq,b.u),v:N(b.pur)});
+  if(nz(b.sale))R.push({l:'By Sale'+qs(b.saleq,b.u),v:N(b.sale)});
+  let csI=null;if(nz(b.cs)){csI={l:'By Closing Stock'+qs(b.csq,b.u),v:N(b.cs)};R.push(csI)}
+  const g=Math.round((N(b.sale)+N(b.cs)-N(b.os)-N(b.pur))*100)/100;
+  put(pl,0,pl.r,(b.n||'Trading'+(ba.length>1?' '+(bi+1):''))+' A/c :-',0,BOLD);pl.r++;hdr(pl,H);
+  const res=tacc(pl,L,R,g?{side:g>0?'L':'R',l:g>0?'To Gross Profit':'By Gross Loss',v:Math.abs(g)}:null);
+  if(!res)return;
+  if(csI)REF.cs.set(b,ref(pl,3,csI.row));
+  if(g)gpCells.push((g>0?'':'-')+ref(pl,res.bc,res.ba))});
+ {const L=[],R=[],salesI=[],gp=o.gp,gpE=gpCells.join('+').replace(/\+-/g,'-');
+  hdr(pl,H);
+  if(T0&&gp<0)L.push({l:'To Gross Loss b/f',v:-gp,f:()=>'-('+gpE+')'});
+  if(T0&&gp>0)R.push({l:'By Gross Profit b/f',v:gp,f:()=>gpE});
+  if(!T0)pick('sales','By Gross Receipts – ').forEach(([l,v])=>{const x={l,v};salesI.push(x);R.push(x)});
+  pick('exp','To ').forEach(([l,v])=>L.push({l,v}));
+  if(o.dep)L.push({l:'To Depreciation',v:o.dep,f:depExpr});
+  pick('oi','By ').forEach(([l,v])=>R.push({l,v}));
+  const np=Math.round(o.np*100)/100;
+  const res=tacc(pl,L,R,np?{side:np>0?'L':'R',l:np>0?"To Net Profit Transfer to Prop's Cap. A/c":"By Net Loss Transfer to Prop's Cap. A/c",v:Math.abs(np)}:null);
+  if(res&&np){const a=ref(pl,res.bc,res.ba);REF.np=()=>np>0?a:'-'+a}
+  if(PR[D.mode]){const g=sum('sales'),pr=PR[D.mode];put(pl,0,pl.r,pr[0],0,BOLD);pl.r++;const r0=pl.r;
+   put(pl,0,r0,'Gross Receipts / Turnover');put(pl,1,r0,g,()=>salesI.length?salesI.map(x=>'D'+x.row).join('+'):'0');
+   put(pl,0,r0+1,'Net Profit as per Profit & Loss A/c');put(pl,1,r0+1,o.np,()=>REF.np());
+   put(pl,0,r0+2,'Net Profit as % of receipts');put(pl,1,r0+2,g?Math.round(o.np/g*10000)/100:0,()=>`IFERROR(B${r0+1}/B${r0}*100,0)`);
+   pr[1].forEach(([l,k],i)=>{put(pl,0,r0+3+i,l);put(pl,1,r0+3+i,g*k,()=>`B${r0}*${k}`)});
+   pl.r=r0+3+pr[1].length+1}
+  sigB(pl)}
+ /* ===== cap : Capital A/c, Annexures, Fixed Asset accounts ===== */
+ o.cps.forEach((x,i)=>{const c=x.c,L=[],R=[],pct=N(c.pct);
+  head(cap,[...(i?[]:[D.firm,D.addr]),'CAPITAL ACCOUNT FOR THE A.Y '+D.ay+(NC>1?' ('+pct+'%)':'')],1);cap.r++;
+  head(cap,[(c.prop||'').toUpperCase()],1);
+  put(cap,0,cap.r,'ANNEXURE : '+String.fromCharCode(65+i)+' :',0,BOLD);cap.r++;if(!i){cap.b0=cap.r}
+  hdr(cap,H);
+  c.dr.filter(r=>nz(r.v)).forEach(r=>L.push({l:'To '+(r.n||''),v:N(r.v)}));
+  if(x.sh<0)L.push({l:'To Net Loss',v:-x.sh,f:()=>'-('+REF.np()+')*'+pct+'/100'});
+  if(nz(c.ob))R.push({l:'By Balance b/f',v:N(c.ob)});
+  c.add.filter(r=>nz(r.v)).forEach(r=>R.push({l:'By '+(r.n||''),v:N(r.v)}));
+  if(x.sh>0)R.push({l:'By Net Profit',v:x.sh,f:()=>REF.np()+'*'+pct+'/100'});
+  const res=tacc(cap,L,R,x.cl?{side:'L',l:'To Closing Balance',v:x.cl}:null,1);
+  REF.capCl[i]=res&&res.ba?ref(cap,1,res.ba):'0'});
+ const sc=mkS('Schedule',2);head(sc,[D.firm,D.addr,'SCHEDULES TO THE ACCOUNTS AS ON '+dt],1);sc.r++;sc.b0=sc.r;
+ const list=(title,items)=>{ttl(sc,title);hdr(sc,['Particulars','Amount(Rs)']);const a=sc.r;
+  items.forEach((x,i)=>{put(sc,0,sc.r,x.l);put(sc,1,sc.r,x.v,x.f);sc.r++});
+  const t=sc.r+1;put(sc,0,t,'Total',0,BOLD);put(sc,1,t,items.reduce((p,x)=>p+x.v,0),`SUM(B${a}:B${t-1})`,BOLD);sc.r=t+2;return ref(sc,1,t)};
+ ORD.forEach(a=>{
+  if(a.t==='stk'){const bl=D.tb.filter(b=>nz(b.cs));REF.stk=list(`ANNEXURE : ${LT.STK} : List Of Closing Stock As On ${dt}`,bl.map((b,i)=>({l:`${i+1}. ${b.n||'Stock in Hand'}${qs(b.csq,b.u)}`,v:N(b.cs),f:REF.cs.has(b)?()=>REF.cs.get(b):null})))}
+  else if(a.t==='an')REF.an[a.k]=list(`ANNEXURE : ${LT[a.k]} : List Of ${a.h} As On ${dt}`,D.L[a.k].filter(x=>nz(x.v)).map((x,i)=>({l:`${i+1}. ${x.n}`,v:N(x.v)})));
+  else REF.xs[a.x.id]=list(`ANNEXURE : ${XL[a.x.id]} : List Of ${a.x.n||'Schedule'} As On ${dt}`,a.x.rows.filter(r=>nz(r.v)).map((r,i)=>({l:`${i+1}. ${r.n}`,v:N(r.v)})))});
+ cap.r=cap.r;
+ o.fa.forEach((x,i)=>{const d=x.d,rt=N(d.r),L=[],R=[];
+  ttl(cap,`${d.n||'Fixed Asset'} Account as on ${dt}`);hdr(cap,H);
+  const Lo=nz(d.o)?{l:'To Opening Balance',v:N(d.o)}:null,La1=nz(d.a1)?{l:'To Addition (more than 6 months)',v:N(d.a1)}:null,La2=nz(d.a2)?{l:'To Addition (less than 6 months)',v:N(d.a2)}:null;
+  [Lo,La1,La2].forEach(y=>y&&L.push(y));
+  const Rd=nz(d.d)?{l:'By Deletion',v:N(d.d)}:null,cB=y=>y?'B'+y.row:'0',cD=y=>y?'D'+y.row:'0';
+  const Rp={l:`By Depreciation @ ${rt}%`,v:x.p,f:()=>`ROUND((${cB(Lo)}+${cB(La1)}-${cD(Rd)})*${rt}/100+${cB(La2)}*${rt}/200,0)`};
+  if(x.p)R.push(Rp);if(Rd)R.push(Rd);
+  const res=tacc(cap,L,R,x.c?{side:'R',l:'By Closing Balance',v:x.c}:null);
+  if(res){if(x.p)REF.faDep.push(ref(cap,3,Rp.row));REF.faCl[i]=res.ba?ref(cap,3,res.ba):'0'}else REF.faCl[i]='0'});
+ /* ===== BS : Balance Sheet (a blank row after every group and before Total) ===== */
+ const ann=(k,v)=>({l:"(As per Annexure '"+LT[k]+"')",v,f:()=>REF.an[k]});
+ const sg=(t,k)=>LT[k]?[{t,items:[ann(k,sum(k))]}]:[];
+ const xg=x=>({l:"(As per Annexure '"+XL[x.id]+"')",v:xsd(x),f:()=>REF.xs[x.id]});
+ const xb=side=>[...XN.filter(x=>x.u===side).map(x=>({t:x.n||'Schedule',items:[xg(x)]})),
+  ...D.xc.filter(c=>c.side===side).map(c=>{const m=XN.filter(x=>x.u===c.id);return m.length?{t:c.n+':',items:m.flatMap(x=>[{l:x.n||'Schedule'},xg(x)])}:null}).filter(Boolean)];
+ const pk=(k)=>{const r=pick(k,'');return r.length?r:[]};
+ const LG=[{t:'Capital Account:',items:o.cps.map((x,i)=>({l:((x.c.prop||(NC>1?'Partner '+(i+1):''))+" (As per Annexure '"+String.fromCharCode(65+i)+"')").trim(),v:x.cl,f:()=>REF.capCl[i]}))},
+  ...sg('Secured Loans','B'),...sg('Unsecured Loans','C'),...sg('Sundry Creditors','D'),...sg('Other Provisions','E'),...xb('L')];
+ const RG=[...sg('Loans & Advances','F'),...sg('Sundry Debtors','G'),
+  ...(SK?[{t:'Closing Stock',items:[{l:"(As per Annexure '"+LT.STK+"')",v:o.cs,f:()=>REF.stk}]}]:[]),
+  ...sg('Cash & Bank Balances','cash'),
+  ...sg('Duties & Taxes','H'),
+  ...(o.fa.length?[{t:'Fixed Assets',items:o.fa.map((x,i)=>({l:x.d.n||'Fixed Asset',v:x.c,f:()=>REF.faCl[i]}))}]:[]),
+  ...(pk('dep').length?[{t:'Deposits',items:pk('dep').map(([l,v])=>({l,v}))}]:[]),...xb('A')];
+ const flat=G=>{const rows=[];G.forEach(g=>{rows.push({l:g.t,b:1});g.items.forEach(x=>rows.push(x));rows.push({blank:1})});return rows};
+ head(bs,[D.firm,D.addr,'BALANCE SHEET AS AT '+dt],1);bs.r++;bs.b0=bs.r;hdr(bs,['LIABILITIES','AMOUNT(Rs)','ASSETS','AMOUNT(Rs)']);
+ {const Lr=flat(LG),Rr=flat(RG),n=Math.max(Lr.length,Rr.length),a=bs.r;
+  [[Lr,0],[Rr,2]].forEach(([rows,c])=>rows.forEach((x,i)=>{if(x.blank)return;put(bs,c,a+i,x.l,0,x.b?BOLD:x.ctr?{alignment:{horizontal:'center'}}:0);if(x.v!==undefined||x.f)put(bs,c+1,a+i,x.v,x.f)}));
+  const t=a+n;put(bs,0,t,'Total',0,BOLD);put(bs,2,t,'Total',0,BOLD);
+  put(bs,1,t,o.tl,`SUM(B${a}:B${t-1})`,BOLD);put(bs,3,t,o.ta,`SUM(D${a}:D${t-1})`,BOLD);bs.r=t+2;sigB(bs)}
+ [pl,cap,sc,bs].forEach(s=>{s.late.forEach(f=>f());if(!Object.keys(s.ws).length)return;
+  if(!s.b1)s.b1=lastRow(s);const OUT={style:'medium'},end=s.sig?s.sig.last:s.b1;
+  for(let r=s.b0;r<=end;r++)for(let c=0;c<s.nc;c++){const a=CL(c)+r,x=s.ws[a]||(s.ws[a]={t:'s',v:''}),inS=s.sig&&r>=s.sig.s0,al=Object.assign({vertical:'top'},x.s&&x.s.alignment),bd=inS?{}:Object.assign({},BD);
+   if(s.box){if(c===0)bd.left=OUT;if(c===s.nc-1)bd.right=OUT;if(r===s.b0)bd.top=OUT;if(r===end)bd.bottom=OUT}
+   else if(inS)Object.assign(bd,BD);
+   if(x.t==='s'&&!al.horizontal&&!inS)al.wrapText=true;x.s=Object.assign({},x.s,{border:bd,alignment:al})}
+  s.ws['!ref']='A1:'+CL(s.nc-1)+(Math.max(s.r,end)+1);s.ws['!cols']=(s.nc===2?[52,20]:[34,15.5,34,15.5]).map(w=>({wch:w}));if(s.mg.length)s.ws['!merges']=s.mg;XLSX.utils.book_append_sheet(wb,s.ws,s.n)})}
+document.getElementById('xl').onclick=()=>{const B=blocks(),wb=XLSX.utils.book_new();
+ buildSheets(wb);
+ if(B.o.T0){const Q=qtRows();if(Q.length){const a=[[D.firm],[D.addr],['Quantitative Details for the year ending on '+D.d],[],['Block / Item','Unit','Opening Stock','Purchases','Sales','Closing Stock','Shortage / (Excess)']];Q.forEach(x=>a.push([x.name,x.u,x.o,x.p,x.s,x.c,x.sh]));
+  const ws=XLSX.utils.aoa_to_sheet(a);Q.forEach((x,i)=>{const r=6+i;ws['G'+r]={t:'n',v:x.sh,f:`C${r}+D${r}-E${r}-F${r}`}});
+  [0,1,2,4].forEach(r=>[0,1,2,3,4,5,6].forEach(c=>{const x=ws[XLSX.utils.encode_cell({r,c})];if(x)x.s={font:{bold:true}}}));
+  Object.keys(ws).forEach(k=>{if(k[0]!=='!'&&typeof ws[k].v==='number')ws[k].z='#,##0.00'});ws['!cols']=[{wch:28},{wch:10},{wch:15},{wch:15},{wch:15},{wch:15},{wch:18}];XLSX.utils.book_append_sheet(wb,ws,'Quantity')}}
+ const js=JSON.stringify(D),ds={};let nn=0;for(let i=0;i<js.length;i+=30000){nn++;ds['A'+nn]={t:'s',v:js.slice(i,i+30000)}}ds['!ref']='A1:A'+nn;XLSX.utils.book_append_sheet(wb,ds,'AppData');wb.Workbook={CalcPr:{fullCalcOnLoad:true},Sheets:wb.SheetNames.map((_,i,a)=>i===a.length-1?{Hidden:1}:{})};
+ const raw=(document.getElementById('fn').value||'').trim().replace(/[\\/:*?"<>|]/g,'').replace(/\.xlsx$/i,'');
+ saveXlsx(wb,(raw||'Balance_Sheet_'+D.d.replace(/\W/g,'-'))+'.xlsx')};
+document.getElementById('ca').onclick=()=>{ask('Clear all amounts? Names and rows will stay.',()=>{['os','cs'].forEach(k=>D[k]='');D.caps.forEach(c=>{c.ob='';c.add.concat(c.dr).forEach(x=>x.v='')});Object.values(D.L).forEach(a=>a.forEach(x=>x.v=''));D.xs.forEach(x=>x.rows.forEach(r=>r.v=''));D.fa.forEach(d=>Object.assign(d,{o:'',a1:'',a2:'',d:''}));D.tb.forEach(b=>Object.assign(b,{os:'',pur:'',sale:'',cs:'',osq:'',purq:'',saleq:'',csq:''}));renderIn();refresh()})};
+document.getElementById('imp').onclick=()=>document.getElementById('impf').click();
+/* ---------- Import of a Balance Sheet workbook made outside this tool (sheets BS / TRADING / P & L / Capital with Annexure lists) ---------- */
+function importForeign(sheets){
+ const cl=x=>String(x??'').replace(/\s+/g,' ').trim(),isN=x=>typeof x==='number'&&isFinite(x),
+ strip=l=>cl(String(l).replace(/^(to|by)\s+/i,'').replace(/[:\-]+$/,'')),
+ rowText=r=>cl(r.find(c=>typeof c==='string'&&cl(c))||''),
+ hdrCols=r=>{const a=[];r.forEach((c,i)=>{if(/^particulars?\s*$/i.test(cl(c)))a.push(i)});return a},
+ num=c=>typeof c==='string'&&/^[\d,]+(\.\d+)?$/.test(c.trim())?+c.replace(/,/g,''):c,
+ halves=(row,sp)=>{const half=(a,b)=>{let l='',n=[];for(let i=a;i<Math.min(b,row.length);i++){const c=num(row[i]);if(isN(c))n.push(c);else if(!l&&cl(c)&&!/^[-–.]+$/.test(cl(c)))l=cl(c)}return{l,n}};return[half(0,sp),half(sp,row.length+1)]},
+ parseDt=t=>{const m=String(t).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-]((?:19|20)\d\d)/);return m?{d:+m[1],m:+m[2],y:+m[3]}:null},
+ yearOf=R=>{for(const r of R.slice(0,12)){const t=rowText(r);if(/balance|account|as on|as at|ended|statement/i.test(t)){const d=parseDt(t);if(d)return d.y}}return null},
+ isRef=s=>/as per\s+(annexure|list|schedule)/i.test(s),
+ pretty=s=>/[a-z]/.test(s)?s:s.toLowerCase().replace(/\b[a-z]/g,m=>m.toUpperCase()),
+ isTitle=(t,nums)=>t&&!nums,PER=/for the year|ended|ending|as on|as at/i;
+ const CAP=[],TB=[],PL={exp:[],oi:[],ie:0},FA={};
+ /* T-form statements: Trading, P&L / Income & Expenditure, Capital A/c, fixed-asset accounts */
+ function sections(R){let sp=-1,ctx=null,block='',cur=null;
+  const tb=()=>{let b=TB.find(x=>x.n===block);if(!b){b={n:block,os:0,pur:0,sale:0,cs:0};TB.push(b)}return b};
+  R.forEach(row=>{const ip=hdrCols(row);if(ip.length>=2){sp=ip[1];if(ctx)ctx.hdr=1;return}
+   const t0=rowText(row),nums=row.some(isN);
+   if(t0&&!nums){const full=cl(row.filter(c=>typeof c==='string').join(' '));
+    if(/^annexure\b/i.test(t0)){if(/\blist\b|schedule/i.test(full)){ctx={t:'list'};return}
+     if(!(ctx&&ctx.t==='cap'&&cur&&!ctx.hdr)){cur={name:'',pct:null,open:0,adds:[],less:[]};CAP.push(cur);ctx={t:'cap'}}return}
+    if(/^balance sheet|^liabilit/i.test(t0)){ctx={t:'bs'};return}
+    if(/trading/i.test(t0)&&/account|a\/c/i.test(t0)&&PER.test(t0)){ctx={t:'tr'};block='';return}
+    if(/(profit\s*(&|and)\s*loss|income\s*(&|and)\s*expenditure)/i.test(t0)&&/account/i.test(t0)&&PER.test(t0)){ctx={t:'pl'};if(/income\s*(&|and)\s*expenditure/i.test(t0))PL.ie=1;return}
+    if(/^capital account/i.test(t0)&&PER.test(t0)){const p=t0.match(/\((\d+(?:\.\d+)?)\s*%\)/);cur={name:'',pct:p?+p[1]:null,open:0,adds:[],less:[]};CAP.push(cur);ctx={t:'cap'};return}
+    const fa=t0.match(/^(.+?)\s+account\s+(?:as on|as at|for the year)/i);
+    if(fa){ctx={t:'fa',name:cl(fa[1])};FA[ctx.name.toLowerCase()]={n:ctx.name,rate:0,open:0,a1:0,a2:0,d:0};return}
+    if(ctx&&ctx.t==='cap'&&cur&&!cur.name&&!ctx.hdr){cur.name=t0;return}}
+   if(!ctx||sp<0||ctx.t==='bs'||ctx.t==='list')return;
+   const[Lh,Rt]=halves(row,sp),k=strip(Lh.l||''),r=strip(Rt.l||'');
+   if(ctx.t==='cap'){
+    if(Lh.n.length&&k&&!/^(closing|total|net|bal(ance)?\.?\s*c\/?d)/i.test(k))cur.less.push([k,Lh.n[0]]);
+    if(Rt.n.length&&r){if(/^(opening|bal(ance)?\.?\s*b\/?[df])/i.test(r))cur.open=Rt.n[0];else if(!/^(net profit|profit|closing|total|bal(ance)?\.?\s*c\/?d)/i.test(r))cur.adds.push([r,Rt.n[0]])}return}
+   if(ctx.t==='fa'){const f=FA[ctx.name.toLowerCase()];
+    if(Lh.n.length&&k){const v=Lh.n[0];if(/^opening/i.test(k))f.open=v;else if(/addition|purchase|^add\b/i.test(k)&&!/closing/i.test(k)){if(/<|less than|below|upto|up to|within/i.test(k))f.a2+=v;else f.a1+=v}}
+    const d=(Rt.l||'').match(/dep\w*\.?\s*@?\s*([\d.]+)\s*%/i);if(d)f.rate=+d[1];
+    if(Rt.n.length&&/deletion|sale|sold|transfer/i.test(r))f.d+=Rt.n[0];return}
+   if(ctx.t==='tr'){
+    if(Lh.l&&!Lh.n.length&&!Rt.l){block=Lh.l.replace(/\s*a\/c\s*[:\-]*$/i,'').replace(/[:\-\s]+$/,'');return}
+    if(Lh.l&&Lh.n.length&&!/gross|net (profit|loss)/i.test(k)){const b=tb();if(/opening stock/i.test(k))b.os+=Lh.n[0];else b.pur+=Lh.n[0]}
+    if(Rt.l&&Rt.n.length&&!/gross|net (profit|loss)/i.test(r)){const b=tb();if(/closing stock/i.test(r))b.cs+=Rt.n[0];else b.sale+=Rt.n[0]}return}
+   if(ctx.t==='pl'){
+    if(Lh.l&&Lh.n.length&&!/gross|net (profit|loss)|^depreciation/i.test(k)&&Lh.n[0])PL.exp.push([k,Lh.n[0]]);
+    if(Rt.l&&Rt.n.length&&!/gross|net (profit|loss)/i.test(r)&&Rt.n[0])PL.oi.push([r,Rt.n[0]])}})}
+ /* "ANNEXURE : B : List Of ... As On ..." with Particulars / Amount columns */
+ const LST=[];
+ function lists(R,Y){for(let i=0;i<R.length;i++){const row=R[i];if(!/^annexure\b/i.test(rowText(row))||row.some(isN))continue;
+   const full=cl(row.filter(c=>typeof c==='string').join(' '));if(!/\blist\b/i.test(full))continue;
+   const lm=full.match(/^annexure\s*:?\s*([A-Z])\s*:?\s*(.*)$/i),letter=lm?lm[1].toUpperCase():'',title=pretty(cl((lm?lm[2]:full).replace(/^list\s+of\s+/i,'').replace(/\s+as\s+(on|at)\b.*$/i,''))),dt=parseDt(full);
+   if(dt&&Y&&dt.y!==Y)continue;
+   let j=i+1;while(j<R.length&&j<i+4&&!hdrCols(R[j]).length)j++;if(j>=R.length||!hdrCols(R[j]).length)continue;
+   const cp=hdrCols(R[j])[0],ca=R[j].findIndex(c=>/^amount/i.test(cl(c)));if(ca<=cp)continue;
+   const items=[];let blank=0;
+   for(j++;j<R.length;j++){const r=R[j];if(/^annexure\b/i.test(rowText(r))&&!r.some(isN))break;
+    const nm=cl(r.slice(cp,ca).find(c=>typeof c==='string'&&cl(c))||''),v=num(r[ca]);
+    if(/^total/i.test(nm))break;
+    if(isN(v)){if(!nm)break;if(v)items.push({n:nm,v});blank=0}else if(!rowText(r)){if(++blank>12)break}}
+   if(items.length)LST.push({letter,title,items,sum:items.reduce((a,x)=>a+x.v,0)})}}
+ const core=sheets.map(R=>({R,hi:R.findIndex(r=>r.some(c=>/^liabilit/i.test(cl(c)))&&r.some(c=>/^assets?$/i.test(cl(c)))),tf:R.some(r=>hdrCols(r).length>=2)}));
+ const votes={};core.forEach(c=>{c.y=yearOf(c.R);if((c.hi>=0||c.tf)&&c.y)votes[c.y]=(votes[c.y]||0)+1});
+ const Y=+Object.keys(votes).sort((a,b)=>votes[b]-votes[a]||b-a)[0]||0,
+ use=core.filter(c=>(c.hi>=0||c.tf)&&(!c.y||!Y||c.y===Y));
+ const bsC=use.find(c=>c.hi>=0);if(!bsC)throw 0;
+ use.forEach(c=>{sections(c.R);lists(c.R,Y)});
+ /* Balance Sheet: firm, date, which annexure is on which side, items typed directly in it */
+ const R=bsC.R,hi=bsC.hi,sp=R[hi].findIndex(c=>/^assets?$/i.test(cl(c))),F={firm:'',addr:'',d:''};
+ R.slice(0,hi).forEach(r=>{const t=rowText(r);if(!t)return;const d=parseDt(t);
+  if(d&&/balance|as on|as at/i.test(t)){const p=n=>String(n).padStart(2,'0');F.d=p(d.d)+'.'+p(d.m)+'.'+(Y||d.y)}else if(!F.firm)F.firm=t;else if(!F.addr)F.addr=t});
+ const side={},inl={L:[],R:[]};let cH={L:'',R:''};
+ for(let i=hi+1;i<R.length;i++){const row=R[i];if(!row.some(isN)&&/account.*(for the year|as on|as at)/i.test(rowText(row)))break;
+  const h=halves(row,sp);[['L',h[0]],['R',h[1]]].forEach(([sd,x])=>{if(!x.l)return;
+   if(isRef(x.l)){const m=x.l.match(/annexure\s*[`'‘’"]*\s*([A-Z])/i);if(m)side[m[1].toUpperCase()]=sd;return}
+   if(!x.n.length){cH[sd]=strip(x.l);return}
+   if(/^capital/i.test(cH[sd]))return;inl[sd].push({h:cH[sd],n:x.l,v:x.n[0]})})}
+ const KEY=h=>/unsecured/i.test(h)?'C':/secured/i.test(h)?'B':/creditor/i.test(h)?'D':/provision/i.test(h)?'E':/loan/i.test(h)&&/advance/i.test(h)?'F':/debtor/i.test(h)?'G':/dut(y|ies)|^taxes/i.test(h)?'H':/cash|bank bal/i.test(h)?'cash':/deposit|security/i.test(h)?'dep':/fixed asset/i.test(h)?'fa':/closing stock|stock in/i.test(h)?'stk':null;
+ /* build the data */
+ const old=D,d=mk();['show','caFirm','caType','caName','caDesig','caNo','caUdin','caFrn','place','dsign','sg','sg1','logo'].forEach(k=>d[k]=old[k]);
+ d.firm=F.firm||old.firm;d.addr=F.addr||old.addr;if(F.d)d.d=F.d;
+ {const m=d.d.match(/^(\d\d)\.(\d\d)\.(\d{4})$/);if(m){const y=+m[3]+(+m[2]>3?1:0);d.ay=y+'-'+String(y+1).slice(2)}}
+ const rows=a=>a.map(([n,v])=>({n,v}));
+ if(CAP.length){const k=CAP.length;d.caps=CAP.map((c,i)=>{const x=mkc(c.pct!=null?c.pct:(i<k-1?Math.floor(100/k):100-Math.floor(100/k)*(k-1)));x.prop=c.name;x.ob=c.open||'';if(c.adds.length)x.add=rows(c.adds);if(c.less.length)x.dr=rows(c.less);return x})}
+ d.mode=TB.length?'B':PL.ie?'I':'A';
+ if(TB.length)d.tb=TB.map(b=>Object.assign(tb0(),{n:b.n,os:b.os||'',pur:b.pur||'',sale:b.sale||'',cs:b.cs||''}));
+ if(PL.exp.length)d.L.exp=rows(PL.exp);
+ if(!TB.length){const s=PL.oi.filter(([n])=>/gross receipts|turnover|^sales?\b|professional/i.test(n)),o=PL.oi.filter(x=>!s.includes(x));if(s.length)d.L.sales=rows(s);if(o.length)d.L.oi=rows(o)}else if(PL.oi.length)d.L.oi=rows(PL.oi);
+ /* annexure lists -> fixed schedules (B-H, cash) or own schedules */
+ const done=new Set(),own=[],notes=[];
+ LST.forEach(l=>{let k=KEY(l.title);if(k==='fa'||k==='stk'||k==='dep')k=null;const id=(k||l.title).toLowerCase();if(done.has(id))return;done.add(id);
+  if(k){d.L[k]=rows(l.items.map(x=>[x.n,x.v]));l.k=k}
+  else{const sd=({L:'L',R:'A'})[side[l.letter]]||(/payable|received|\brcd\b|from customer|outstanding|loans? (taken|from)/i.test(l.title)?'L':'A');own.push({id:'s'+Date.now().toString(36)+own.length,n:l.title,u:sd,rows:l.items.map(x=>({n:x.n,v:x.v}))})}});
+ const have=k=>LST.some(l=>l.k===k);
+ /* items typed directly in the Balance Sheet */
+ const grp={};inl.L.concat(inl.R).forEach(x=>{const k=KEY(x.h);(grp[(k||'?')+'|'+x.h]=grp[(k||'?')+'|'+x.h]||{k,h:x.h,sd:inl.L.includes(x)?'L':'A',it:[]}).it.push(x)});
+ const fix=[];
+ Object.values(grp).forEach(g=>{const it=g.it.map(x=>[x.n,x.v]);
+  if(g.k==='fa')g.it.forEach(x=>fix.push(x));
+  else if(g.k==='stk')return;
+  else if(g.k==='dep')d.L.dep=(d.L.dep===undefined||!d.L.dep.some(x=>N(x.v))?[]:d.L.dep).concat(rows(it));
+  else if(g.k){if(!have(g.k)){d.L[g.k]=rows(it);notes.push(g.h)}}
+  else{own.push({id:'s'+Date.now().toString(36)+own.length,n:g.h||'Other',u:g.sd,rows:g.it.map(x=>({n:x.n,v:x.v}))});notes.push(g.h)}});
+ d.xs=own;
+ /* fixed assets: accounts with depreciation + items that only appear in the Balance Sheet */
+ const fa=[],used=new Set();
+ fix.forEach(x=>{const key=Object.keys(FA).find(k=>k===x.n.toLowerCase()||x.n.toLowerCase().includes(k)||k.includes(x.n.toLowerCase())),f=key&&FA[key];
+  if(f&&f.open){used.add(key);fa.push({n:x.n,r:f.rate||'',o:f.open,a1:f.a1||'',a2:f.a2||'',d:f.d||''})}else fa.push({n:x.n,r:0,o:x.v,a1:'',a2:'',d:''})});
+ Object.keys(FA).filter(k=>!used.has(k)&&FA[k].open).forEach(k=>{const f=FA[k];fa.push({n:pretty(f.n),r:f.rate||'',o:f.open,a1:f.a1||'',a2:f.a2||'',d:f.d||''})});
+ if(fa.length)d.fa=fa;
+ D=d;
+ const o=C(),dif=Math.round((o.tl-o.ta)*100)/100;
+ return 'Import finished ('+(CAP.length?CAP.length+' capital A/c, ':'')+TB.length+' trading A/c, '+LST.length+' annexure lists'+(own.length?', '+own.length+' own schedule(s): '+own.map(x=>x.n).join(', '):'')+'). '+(dif?'Balance Sheet difference: '+fmt(dif)+' - please check the figures.':'The Balance Sheet is balanced.')}
+document.getElementById('impf').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const wb=XLSX.read(new Uint8Array(r.result),{type:'array'}),ws=wb.Sheets.AppData;let msg='';if(ws){let js='';for(let i=1;ws['A'+i];i++)js+=ws['A'+i].v;D=migr(JSON.parse(js))}else msg=importForeign(wb.SheetNames.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true})));document.querySelectorAll('.meta [data-m]').forEach(i=>i.value=D[i.dataset.m]);document.getElementById('fn').value=f.name.replace(/\.(xlsx|xlsm|xls|xlsb|xltx|xltm|xlt)$/i,'');renderIn();refresh();if(msg)alert(msg)}catch(x){console.error(x);alert('Could not read this file. Import works for Excel files exported from this tool, or a Balance Sheet workbook with Liabilities / Assets, Trading, P & L and Capital sheets.')}e.target.value=''};r.readAsArrayBuffer(f)};
+
+const DEPROW=`<tr><td><input value="Depreciation (from Depreciation Schedule)" readonly></td><td class="n" id="depv"></td><td></td></tr>`;
+function liveAuto(o){const f=n=>N(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}),d=document.getElementById('depv');if(d)d.textContent=f(o.dep);o.cps.forEach((x,i)=>{const e=document.getElementById('cnp'+i);if(e)e.textContent=f(x.sh)})}
+const capCards=()=>{const tp=D.caps.reduce((t,c)=>t+N(c.pct),0),ok=Math.abs(tp-100)<.005,m=D.caps.length>1;
+ return `<div class="card"><h3>Capital Account <button class="sm o" data-cnew="1" style="float:right">+ Add capital account</button></h3><table><tr><th>Particulars</th><th class="n">Amount</th><th></th></tr>`
+ +D.caps.map((c,i)=>`<tr class="b"><td colspan="3"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">Capital Account – <input style="width:240px" data-ci="${i}" data-f="prop" placeholder="Proprietor / Partner name" value="${esc(c.prop)}"> Equity <input type="number" style="width:80px" data-ci="${i}" data-f="pct" value="${esc(c.pct)}"> %${m?` <button class="sm o" data-cdel="${i}">Delete account</button>`:''}</div></td></tr>`
+ +`<tr><td>Opening Balance (b/f)</td><td class="v"><input type="number" step="0.01" data-ci="${i}" data-f="ob" value="${esc(c.ob)}"></td><td></td></tr>`
+ +[['add','Add:'],['dr','Less:']].map(([l,t])=>`<tr><td colspan="3" style="font-weight:600;text-decoration:underline">${t}</td></tr>`+c[l].map((x,j)=>`<tr><td><input data-ci="${i}" data-cl="${l}" data-j="${j}" data-f="n" placeholder="Particulars" value="${esc(x.n)}"></td><td class="v"><input type="number" step="0.01" data-ci="${i}" data-cl="${l}" data-j="${j}" data-f="v" value="${esc(x.v)}"></td><td class="nt"><button class="sm o" data-crdel="${i}|${l}|${j}" aria-label="Delete row">×</button></td></tr>`).join('')+(l==='add'?`<tr><td><input value="Profit/(Loss) for the year" readonly></td><td class="n" id="cnp${i}"></td><td></td></tr>`:'')+`<tr><td colspan="3"><button class="sm o" data-cradd="${i}|${l}">+ Add row</button></td></tr>`).join('')).join('')
+ +`<tr><td colspan="3" id="cpt" style="${ok?'':'color:var(--bad)'}">Total equity: ${tp}%${ok?'':' (should be 100%)'}</td></tr></table></div>`};
+document.addEventListener('input',e=>{const t=e.target,d=t.dataset;if(d.ci===undefined)return;const c=D.caps[+d.ci];if(!c)return;
+ if(d.cl)c[d.cl][+d.j][d.f]=t.value;else c[d.f]=t.value;
+ if(d.f==='pct'){const sp=document.getElementById('cpt'),tp=D.caps.reduce((x,y)=>x+N(y.pct),0),ok=Math.abs(tp-100)<.005;if(sp){sp.style.color=ok?'':'var(--bad)';sp.textContent='Total equity: '+tp+'%'+(ok?'':' (should be 100%)')}}refresh()});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;let ch=0;
+ if(d.cnew){D.caps.push(mkc(Math.max(0,100-D.caps.reduce((x,y)=>x+N(y.pct),0))));ch=1}
+ if(d.cdel!==undefined){const i=+d.cdel;ask('Delete this capital account?',()=>{D.caps.splice(i,1);renderIn();refresh()});return}
+ if(d.cradd){const[i,l]=d.cradd.split('|');D.caps[+i][l].push(row());ch=1}
+ if(d.crdel){const[i,l,j]=d.crdel.split('|'),r=D.caps[+i][l];r.splice(+j,1);if(!r.length)r.push(row());ch=1}
+ if(ch){renderIn();refresh()}});
+renderIn();refresh();
+</script>
+<script>
+/* ---------- Year line above the heading ---------- */
+(function(){
+ const el=document.getElementById('fyl');
+ const upd=()=>{
+  let t='';
+  const m=/^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(D.d||'').trim());
+  if(m&&+m[2]>=1&&+m[2]<=12){const y=+m[3],a=+m[2]<=3?y-1:y;t='Financial Year '+a+'-'+String(a+1).slice(2)}
+  if(D.ay&&String(D.ay).trim())t+=(t?'  |  ':'')+'Assessment Year '+String(D.ay).trim();
+  el.textContent=t;
+ };
+ const _rf=window.refresh;
+ window.refresh=function(){const x=_rf.apply(this,arguments);upd();return x};
+ upd();
+})();
+</script><!--@include shared/wheel.html-->
+<script>
+/* Interface used by the desktop shell: Save / Open, auto-save, checks, PDF. Shared helpers are in shared/bsapi-common.html */
+(function(){
+ const fnEl=document.getElementById('fn');
+ window.bsApi={
+  fmt:'a',
+  firm(){return String(D.firm||'')},
+  logo(){return String(D.logo||'')},
+  setLogo(u){D.logo=String(u||'')},
+  printDoc(){return bsPrintDoc([/^Balance Sheet$/,/^Trading/,/^Capital/])},
+  get(){const o=JSON.parse(JSON.stringify(D));o._app='BalanceSheetAnnexure';o._fmt='a';o._fn=fnEl.value||'';return o},
+  name(){return bsSafe(fnEl.value)||('Balance_Sheet_Data_'+String(D.d||'').replace(/\W/g,'-'))},
+  load(o,fname,silent,done){
+   try{
+    if(!o||!o.L||!o.fa||!o.tb)throw new Error('This is not a saved Annexure-format data file.');
+    const go=()=>{D=migr(o);document.querySelectorAll('.meta [data-m]').forEach(i=>i.value=D[i.dataset.m]);fnEl.value=o._fn||String(fname||'').replace(/\.(json|bsdata)$/i,'');renderIn();refresh();if(done)done()};
+    if(silent)go();else ask('Load this data? Current data on screen will be replaced.',go);
+   }catch(x){alert('Could not load this file: '+(x&&x.message?x.message:x))}
+  },
+  totals(){try{const B=blocks();return[{l:B.o.tl,a:B.o.ta}]}catch(e){return[]}},
+  check(){
+   const r=[];
+   try{const B=blocks(),df=B.o.tl-B.o.ta;if(!(Math.abs(df)<.005))r.push({lv:'e',t:'Balance Sheet is not balanced: difference (Liabilities - Assets) '+fmt(df)})}catch(e){}
+   try{const t=D.caps.reduce((x,y)=>x+N(y.pct),0);if(Math.abs(t-100)>=.005)r.push({lv:'w',t:'Capital profit-sharing total is '+t+'% (should be 100%)'})}catch(e){}
+   if(!String(D.firm||'').trim())r.push({lv:'w',t:'Firm name is empty'});
+   if(!bsOkDate(D.d))r.push({lv:'w',t:'Balance Sheet date is missing or not in dd.mm.yyyy format'});
+   return r
+  }
+ };
+})();
+</script>
+<!--@include shared/bsapi-common.html-->
+<!--@include shared/file-io.html-->
+</body></html>
