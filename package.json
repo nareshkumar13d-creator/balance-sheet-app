@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "description": "Balance Sheet - Vertical (Schedule III), Horizontal and Annexure formats (offline desktop app)",
   "author": {
-    "name": "Your Firm Name"
+    "name": "Varun Goyal"
   },
   "main": "main.js",
   "scripts": {
@@ -55,7 +55,7 @@
       "runAfterFinish": true,
       "perMachine": false
     },
-    "copyright": "Copyright (c) 2026 Your Firm Name",
+    "copyright": "Copyright (c) 2026 Varun Goyal",
     "fileAssociations": [
       {
         "ext": "bsdata",
